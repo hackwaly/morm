@@ -64,47 +64,35 @@ async test "mysql sql execution coverage" {
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_test (id, name, score, active) VALUES (?, ?, ?, ?)",
-      [
-        @engine.Int(1),
-        @engine.String("A"),
-        @engine.Double(10.5),
-        @engine.Bool(true),
-      ],
+      [Int(1), String("A"), Double(10.5), Bool(true)],
     ).ok,
     content="true",
   )
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_test (id, name, score, active) VALUES (?, ?, ?, ?)",
-      [
-        @engine.Int(2),
-        @engine.String("B"),
-        @engine.Double(20.5),
-        @engine.Bool(false),
-      ],
+      [Int(2), String("B"), Double(20.5), Bool(false)],
     ).ok,
     content="true",
   )
 
   inspect(
     engine.exec_raw("UPDATE morm_engine_tx_test SET score = ? WHERE id = ?", [
-      @engine.Double(88.8),
-      @engine.Int(2),
+      Double(88.8),
+      Int(2),
     ]).ok,
     content="true",
   )
   let q = engine.exec_raw(
     "SELECT id, name, score FROM morm_engine_tx_test WHERE id = ?",
-    [@engine.Int(2)],
+    [Int(2)],
   )
   inspect(q.ok, content="true")
   inspect(q.rows.length(), content="1")
   json_inspect(q.rows[0], content={ "id": 2, "name": "B", "score": 88.8 })
 
   inspect(
-    engine.exec_raw("DELETE FROM morm_engine_tx_test WHERE id = ?", [
-      @engine.Int(2),
-    ]).ok,
+    engine.exec_raw("DELETE FROM morm_engine_tx_test WHERE id = ?", [Int(2)]).ok,
     content="true",
   )
   let after_delete = engine.exec_raw(
@@ -137,7 +125,7 @@ async test "mysql transaction pins one connection" {
     content="true",
   )
 
-  inspect(engine.exec(@engine.Tx(@engine.Begin)).ok, content="true")
+  inspect(engine.exec(@engine.Tx(Begin)).ok, content="true")
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_pin_test (id, name) VALUES (1, 'A')",
@@ -145,13 +133,13 @@ async test "mysql transaction pins one connection" {
     ).ok,
     content="true",
   )
-  inspect(engine.exec(@engine.Tx(@engine.Rollback)).ok, content="true")
+  inspect(engine.exec(@engine.Tx(Rollback)).ok, content="true")
   json_inspect(
     engine.exec_raw("SELECT COUNT(*) AS c FROM morm_engine_tx_pin_test", []).rows[0],
     content={ "c": 0 },
   )
 
-  inspect(engine.exec(@engine.Tx(@engine.Begin)).ok, content="true")
+  inspect(engine.exec(@engine.Tx(Begin)).ok, content="true")
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_pin_test (id, name) VALUES (1, 'A')",
@@ -159,7 +147,7 @@ async test "mysql transaction pins one connection" {
     ).ok,
     content="true",
   )
-  inspect(engine.exec(@engine.Tx(@engine.Commit)).ok, content="true")
+  inspect(engine.exec(@engine.Tx(Commit)).ok, content="true")
   json_inspect(
     engine.exec_raw("SELECT COUNT(*) AS c FROM morm_engine_tx_pin_test", []).rows[0],
     content={ "c": 1 },

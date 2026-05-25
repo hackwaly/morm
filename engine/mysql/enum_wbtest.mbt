@@ -7,7 +7,7 @@ fn enum_test_table() -> @table.Table {
     columns: [
       {
         name: "status",
-        column_type: @table.Enum("Status", ["Draft", "Published"]),
+        column_type: Enum("Status", ["Draft", "Published"]),
         size: 0,
         nullable: false,
         default_value: Some("'Draft'"),

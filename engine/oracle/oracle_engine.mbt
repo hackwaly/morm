@@ -83,36 +83,34 @@ fn param_sql(p : @engine.Param) -> String {
     "'\{esc}'"
   }
   match p {
-    @engine.Null => "NULL"
-    @engine.Bool(v) => if v { "1" } else { "0" }
-    @engine.Byte(v) => v.to_int().to_string()
-    @engine.Int(v) => v.to_string()
-    @engine.Int16(v) => v.to_string()
-    @engine.UInt16(v) => v.to_string()
-    @engine.UInt(v) => v.to_string()
-    @engine.UInt64(v) => v.to_string()
-    @engine.Int64(v) => v.to_string()
-    @engine.BigInt(v) => v.to_string()
-    @engine.Float(v) => v.to_string()
-    @engine.Double(v) => v.to_string()
-    @engine.Decimal(v) => v
-    @engine.Date(v, format) => quote(@engine.format_plain_date(v, format))
-    @engine.Time(v, format) => quote(@engine.format_plain_time(v, format))
-    @engine.DateTime(v, format) =>
-      quote(@engine.format_plain_date_time(v, format))
-    @engine.Timestamp(v, format) =>
-      quote(@engine.format_zoned_date_time(v, format))
-    @engine.Uuid(v) => quote(v)
-    @engine.Object(v) => quote(v.to_json().stringify())
-    @engine.Json(v) => quote(v.stringify())
-    @engine.String(v) => quote(v)
-    @engine.Bytes(v) => "hextoraw('\{@engine.bytes_to_hex(v)}')"
+    Null => "NULL"
+    Bool(v) => if v { "1" } else { "0" }
+    Byte(v) => v.to_int().to_string()
+    Int(v) => v.to_string()
+    Int16(v) => v.to_string()
+    UInt16(v) => v.to_string()
+    UInt(v) => v.to_string()
+    UInt64(v) => v.to_string()
+    Int64(v) => v.to_string()
+    BigInt(v) => v.to_string()
+    Float(v) => v.to_string()
+    Double(v) => v.to_string()
+    Decimal(v) => v
+    Date(v, format) => quote(@engine.format_plain_date(v, format))
+    Time(v, format) => quote(@engine.format_plain_time(v, format))
+    DateTime(v, format) => quote(@engine.format_plain_date_time(v, format))
+    Timestamp(v, format) => quote(@engine.format_zoned_date_time(v, format))
+    Uuid(v) => quote(v)
+    Object(v) => quote(v.to_json().stringify())
+    Json(v) => quote(v.stringify())
+    String(v) => quote(v)
+    Bytes(v) => "hextoraw('\{@engine.bytes_to_hex(v)}')"
   }
 }
 
 ///|
 fn inline_sql(sql : String, params : FixedArray[@engine.Param]) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut i = 0
   for c in sql {
     if c == '?' && i < params.length() {
@@ -207,25 +205,25 @@ fn oracle_table_name(table_schema : @table.Table) -> String {
 ///|
 fn oracle_type_from_column_type(column_type : @table.ColumnType) -> String {
   match column_type {
-    @table.TinyInt => "NUMBER(3)"
-    @table.SmallInt => "NUMBER(5)"
-    @table.MediumInt => "NUMBER(7)"
-    @table.Int => "NUMBER(10)"
-    @table.BigInt => "NUMBER(19)"
-    @table.Float => "BINARY_FLOAT"
-    @table.Double => "BINARY_DOUBLE"
-    @table.Decimal(a0, a1) => "NUMBER(\{a0}, \{a1})"
-    @table.Char(a0) => "CHAR(\{a0})"
-    @table.VarChar(a0) => "VARCHAR2(\{a0})"
-    @table.Text | @table.MediumText | @table.LongText => "CLOB"
-    @table.Binary(a0) | @table.VarBinary(a0) => "RAW(\{a0})"
-    @table.Blob | @table.MediumBlob | @table.LongBlob => "BLOB"
-    @table.Date => "DATE"
-    @table.Time => "DATE"
-    @table.DateTime | @table.Timestamp => "TIMESTAMP"
-    @table.Year => "NUMBER(4)"
-    @table.Json | @table.JsonB => "CLOB"
-    @table.Enum(_, values) =>
+    TinyInt => "NUMBER(3)"
+    SmallInt => "NUMBER(5)"
+    MediumInt => "NUMBER(7)"
+    Int => "NUMBER(10)"
+    BigInt => "NUMBER(19)"
+    Float => "BINARY_FLOAT"
+    Double => "BINARY_DOUBLE"
+    Decimal(a0, a1) => "NUMBER(\{a0}, \{a1})"
+    Char(a0) => "CHAR(\{a0})"
+    VarChar(a0) => "VARCHAR2(\{a0})"
+    Text | MediumText | LongText => "CLOB"
+    Binary(a0) | VarBinary(a0) => "RAW(\{a0})"
+    Blob | MediumBlob | LongBlob => "BLOB"
+    Date => "DATE"
+    Time => "DATE"
+    DateTime | Timestamp => "TIMESTAMP"
+    Year => "NUMBER(4)"
+    Json | JsonB => "CLOB"
+    Enum(_, values) =>
       if values.length() == 0 {
         "VARCHAR2(255)"
       } else {
@@ -237,7 +235,7 @@ fn oracle_type_from_column_type(column_type : @table.ColumnType) -> String {
         }
         "VARCHAR2(\{max_len})"
       }
-    @table.Boolean => "NUMBER(1)"
+    Boolean => "NUMBER(1)"
   }
 }
 
@@ -275,7 +273,7 @@ fn oracle_column_def(column : @table.Column) -> String {
     return ""
   }
   let col_type = match column.column_type {
-    @table.Json | @table.JsonB => oracle_json_storage_type(column)
+    Json | JsonB => oracle_json_storage_type(column)
     _ => oracle_type_from_column_type(column.column_type)
   }
   let default_value = oracle_column_default_expr(column).unwrap_or("")
@@ -286,7 +284,7 @@ fn oracle_column_def(column : @table.Column) -> String {
   } else {
     default_value
   }
-  let buf = @buffer.new()
+  let buf = StringBuilder()
   buf.write_string(column.name)
   buf.write_string(" ")
   buf.write_string(col_type)
@@ -400,7 +398,7 @@ fn oracle_index_sqls(table_schema : @table.Table) -> Array[String] {
     if idx.name is ("" | "PRIMARY") || idx.columns.length() == 0 {
       continue
     }
-    let unique = if idx.index_type == @table.Unique { "UNIQUE " } else { "" }
+    let unique = if idx.index_type == Unique { "UNIQUE " } else { "" }
     let cols_sql = idx.columns.join(", ")
     sqls.push(
       "CREATE \{unique}INDEX \{idx.name} ON \{table_name} (\{cols_sql})",
@@ -413,23 +411,23 @@ fn oracle_index_sqls(table_schema : @table.Table) -> Array[String] {
 fn oracle_tx_sql(op : @engine.TxOp) -> String {
   match op {
     // Oracle starts transaction implicitly on first DML.
-    @engine.Begin => ""
-    @engine.Commit => "COMMIT"
-    @engine.Rollback => "ROLLBACK"
-    @engine.Savepoint(name) => "SAVEPOINT " + name
-    @engine.RollbackToSavepoint(name) => "ROLLBACK TO " + name
+    Begin => ""
+    Commit => "COMMIT"
+    Rollback => "ROLLBACK"
+    Savepoint(name) => "SAVEPOINT " + name
+    RollbackToSavepoint(name) => "ROLLBACK TO " + name
   }
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with exec(
+pub impl @engine.Engine for OracleEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) -> @engine.QueryResult {
   let (sql, params) = match query.to_query() {
-    @engine.Statement(stmt) => @engine.render_default_sql(stmt)
-    @engine.Raw(sql, params) => (sql, params)
-    @engine.Tx(op) => (oracle_tx_sql(op), [])
+    Statement(stmt) => @engine.render_default_sql(stmt)
+    Raw(sql, params) => (sql, params)
+    Tx(op) => (oracle_tx_sql(op), [])
   }
   if sql.trim() == "" {
     return { ok: true, rows_affected: 0, rows: [], error: None }
@@ -444,7 +442,7 @@ pub impl @engine.Engine for OracleEngine with exec(
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with page(
+pub impl @engine.Engine for OracleEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -452,22 +450,22 @@ pub impl @engine.Engine for OracleEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let page_query = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
           }
           @engine.Statement(
-            @engine.Select({
+            Select({
               ..sel,
               order_by,
               limit: Some(pageable.size),
@@ -475,17 +473,17 @@ pub impl @engine.Engine for OracleEngine with page(
             }),
           )
         }
-        _ => @engine.Statement(stmt)
+        _ => Statement(stmt)
       }
-    @engine.Raw(sql, params) =>
-      @engine.Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
+    Raw(sql, params) =>
+      Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
     other => other
   }
   self.exec(page_query)
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with page_raw(
+pub impl @engine.Engine for OracleEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -495,7 +493,7 @@ pub impl @engine.Engine for OracleEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with exec_raw(
+pub impl @engine.Engine for OracleEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -504,7 +502,7 @@ pub impl @engine.Engine for OracleEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with migrate_table(
+pub impl @engine.Engine for OracleEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) -> @engine.QueryResult {
@@ -533,6 +531,6 @@ pub impl @engine.Engine for OracleEngine with migrate_table(
 }
 
 ///|
-pub impl @engine.Engine for OracleEngine with close(_self) -> Unit {
+pub impl @engine.Engine for OracleEngine with fn close(_self) -> Unit {
   ()
 }

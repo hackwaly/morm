@@ -333,7 +333,7 @@ fn type_expr_text(
 ) -> String {
   match ty {
     Name(constr_id~, tys~, ..) =>
-      if tys is @list.Empty {
+      if tys is Empty {
         long_ident_text(constr_id.id)
       } else {
         "\{long_ident_text(constr_id.id)}[\{type_list_text(tys)}]"
@@ -369,7 +369,7 @@ fn analyze_return_type(
           }
         Ident(name="Map") | Dot(id="Map", ..) =>
           match tys {
-            @list.More(key_ty, tail=@list.More(value_ty, ..)) =>
+            More(key_ty, tail=More(value_ty, ..)) =>
               (
                 full_type,
                 "Map",
@@ -715,7 +715,7 @@ fn parse_mappers_from_ast(
 
   ast.each(item => {
     match item {
-      @syntax.Impl::TopTrait(trait_decl) =>
+      TopTrait(trait_decl) =>
         if trait_decl is { name: { name: trait_name, .. }, methods, attrs, .. } {
           // println("Found TopTrait: \{trait_name}")
           // 读取 mapper 绑定信息（entity 可选，table 可选）
@@ -1216,7 +1216,7 @@ fn parse_entities_from_ast(
 ) -> Array[EntitySpec] {
   let specs : Array[EntitySpec] = []
   ast.each(item => {
-    if item is @syntax.Impl::TopTypeDef(type_decl) {
+    if item is TopTypeDef(type_decl) {
       if type_decl
         is { tycon: name, components: Record(fields~, ..), attrs, .. } {
         let orm_attrs = collect_orm_attributes(attrs)

@@ -5,7 +5,7 @@ fn[T : ToJson] write_json_show(value : T, logger : &Logger) -> Unit {
 
 ///|
 pub fn bytes_to_hex(data : Bytes) -> String {
-  let out = @buffer.new(size_hint=data.length() * 2)
+  let out = StringBuilder(size_hint=data.length() * 2)
   let digit = fn(v : Int) -> Char {
     if v < 10 {
       (48 + v).unsafe_to_char()
@@ -33,7 +33,7 @@ pub fn decode_json_column(
       match @bson.json_bytes_to_bytes(value) {
         Some(data) =>
           @bson.from_bytes(data) catch {
-            @bson.BsonError(msg) =>
+            BsonError(msg) =>
               raise ParamDecodeError("BSON decode error: \{msg}")
           }
         None => value
@@ -67,7 +67,7 @@ pub(all) enum WhereType {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for WhereType with output(self : WhereType, logger : &Logger) {
+pub impl Show for WhereType with fn output(self : WhereType, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -79,7 +79,7 @@ pub(all) struct Where {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Where with output(self : Where, logger : &Logger) {
+pub impl Show for Where with fn output(self : Where, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -90,7 +90,7 @@ pub(all) enum OrderBy {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for OrderBy with output(self : OrderBy, logger : &Logger) {
+pub impl Show for OrderBy with fn output(self : OrderBy, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -101,7 +101,7 @@ pub(all) enum SortDirection {
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for SortDirection with output(
+pub impl Show for SortDirection with fn output(
   self : SortDirection,
   logger : &Logger,
 ) {
@@ -118,7 +118,7 @@ pub(all) struct Sort {
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Sort with output(self : Sort, logger : &Logger) {
+pub impl Show for Sort with fn output(self : Sort, logger : &Logger) {
   match self.direction {
     Asc => logger.write_string("Sort(\{self.property} Asc)")
     Desc => logger.write_string("Sort(\{self.property} Desc)")
@@ -133,7 +133,7 @@ pub(all) struct Pageable {
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Pageable with output(self : Pageable, logger : &Logger) {
+pub impl Show for Pageable with fn output(self : Pageable, logger : &Logger) {
   match self.sort {
     Some(s) =>
       logger.write_string(
@@ -157,7 +157,7 @@ pub(all) struct Page[T] {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl[T] Show for Page[T] with output(self, logger) {
+pub impl[T] Show for Page[T] with fn output(self, logger) {
   logger.write_string(
     "Page(content=\{self.content.length()}, total_elements=\{self.total_elements}, total_pages=\{self.total_pages}, number=\{self.number}, size=\{self.size})",
   )
@@ -170,33 +170,33 @@ pub(all) struct Set {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Set with output(self : Set, logger : &Logger) {
+pub impl Show for Set with fn output(self : Set, logger : &Logger) {
   write_json_show(self, logger)
 }
 
 ///|
 pub(open) trait QueryBuilder {
-  to_query(Self) -> Query
+  fn to_query(Self) -> Query
 }
 
 ///|
 pub(open) trait Engine {
-  async page(Self, query : &QueryBuilder, pageable : Pageable) -> QueryResult
-  async page_raw(
+  async fn page(Self, query : &QueryBuilder, pageable : Pageable) -> QueryResult
+  async fn page_raw(
     Self,
     sql : String,
     params : FixedArray[Param],
     pageable : Pageable,
   ) -> QueryResult
   /// Execute a normalized query model (statement/raw/transaction).
-  async exec(Self, query : &QueryBuilder) -> QueryResult
+  async fn exec(Self, query : &QueryBuilder) -> QueryResult
   ///|
-  /// Convenience wrapper for raw SQL; internally equivalent to exec(Query::Raw(...)).
-  async exec_raw(Self, sql : String, params : FixedArray[Param]) -> QueryResult
+  /// Convenience wrapper for raw SQL; internally equivalent to exec(QueryRaw(...)).
+  async fn exec_raw(Self, sql : String, params : FixedArray[Param]) -> QueryResult
   ///|
   /// Apply table migration from schema model.
-  async migrate_table(Self, table_schema : @table.Table) -> QueryResult
+  async fn migrate_table(Self, table_schema : @table.Table) -> QueryResult
   ///|
   /// Close the database connection.
-  close(Self) -> Unit
+  fn close(Self) -> Unit
 }

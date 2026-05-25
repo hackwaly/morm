@@ -25,7 +25,7 @@ pub fn Connection::open(
   filename : String,
   loc~ : SourceLoc,
 ) -> Connection raise SqliteError {
-  let buf = @buffer.new(size_hint=filename.length() * 2)
+  let buf = Buffer(size_hint=filename.length() * 2)
   buf.write_bytes(@encoding/utf8.encode(filename))
   buf.write_byte(0x00)
   let filename = buf.contents()

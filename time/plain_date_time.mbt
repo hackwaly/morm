@@ -79,7 +79,7 @@ pub fn PlainDateTime::from_string(str : String) -> PlainDateTime raise Error {
 ///|
 /// Returns a string representing the datetime.
 pub fn PlainDateTime::to_string(self : PlainDateTime) -> String {
-  let buf = StringBuilder::new(size_hint=18)
+  let buf = StringBuilder(size_hint=18)
   buf.write_string(self.date.to_string())
   buf.write_char('T')
   buf.write_string(self.time.to_string())
@@ -87,7 +87,7 @@ pub fn PlainDateTime::to_string(self : PlainDateTime) -> String {
 }
 
 ///|
-pub impl Show for PlainDateTime with output(
+pub impl Show for PlainDateTime with fn output(
   self : PlainDateTime,
   logger : &Logger,
 ) -> Unit {
@@ -95,12 +95,12 @@ pub impl Show for PlainDateTime with output(
 }
 
 ///|
-pub impl ToJson for PlainDateTime with to_json(self) -> Json {
+pub impl ToJson for PlainDateTime with fn to_json(self) -> Json {
   Json::string(self.to_string())
 }
 
 ///|
-pub impl @json.FromJson for PlainDateTime with from_json(json, path) {
+pub impl @json.FromJson for PlainDateTime with fn from_json(json, path) {
   guard json is String(s) else {
     json_decode_error(path, "PlainDateTime::from_json: expected string")
   }

@@ -516,7 +516,7 @@ fn render_table_literal(table : @morm.Table) -> String {
   let foreign_keys = table.foreign_keys.map(render_foreign_key).join(",\n")
   let engine_options = render_engine_options(table.engine_options)
   (
-    $| \{PKG_NAME}.Table::{
+    $| {
     $|   name: \{mbt_string(table.name)},
     $|   schema: \{mbt_opt_string(table.schema)},
     $|   catalog: \{mbt_opt_string(table.catalog)},
@@ -671,7 +671,7 @@ fn render_entity__from(spec : EntitySpec) -> String {
   (
     $| pub fn \{spec.name}::_from(row : Map[String, @engine.Param]) -> \{spec.name} {
     $|\{fields_code}
-    $|     return \{spec.name}::{
+    $|     return {
     $|\{ctor_code}
     $|     }
     $| }
@@ -691,9 +691,9 @@ fn generate_entity_impl(
     render_entity__from(spec) +
     "\n" +
     (
-      $| pub impl @engine.FromParam for \{name} with from_param(value) {
+      $| pub impl @engine.FromParam for \{name} with fn from_param(value) {
       $|   match value {
-      $|     @engine.Object(obj) => {
+      $|     Object(obj) => {
       $|       let row : Map[String, @engine.Param] = Map([])
       $|       for key in obj.keys() {
       $|         if obj.get(key) is Some(value) {
@@ -702,7 +702,7 @@ fn generate_entity_impl(
       $|       }
       $|       \{name}::_from(row)
       $|     }
-      $|     _ => raise @engine.ParamDecodeError("\{name}::from_param: expected Json object row")
+      $|     _ => raise ParamDecodeError("\{name}::from_param: expected Json object row")
       $|   }
       $| }
     )
@@ -710,7 +710,7 @@ fn generate_entity_impl(
     ""
   }
   (
-    $| pub impl \{PKG_NAME}.Entity for \{name} with table(_self) -> \{PKG_NAME}.Table { \{name}::table() }
+    $| pub impl \{PKG_NAME}.Entity for \{name} with fn table(_self) -> \{PKG_NAME}.Table { \{name}::table() }
     $| pub fn \{name}::table() -> \{PKG_NAME}.Table {
     $|\{table_literal}
     $| }
@@ -898,7 +898,7 @@ fn render_collection_decode_code(
       )
     "Set" =>
       (
-        $|   let out : \{ret_type} = @set.Set::new()
+        $|   let out : \{ret_type} = @set.Set([])
         $|   for row in \{query_expr}.rows {
         $|     out.add(\{row_decode_expr})
         $|   }
@@ -980,11 +980,11 @@ fn render_query_result_decode_expr(
 ///|
 fn render_enum_codec_impl(enum_spec : EnumSpec) -> String {
   (
-    $| pub impl @engine.ToParam for \{enum_spec.name} with to_param(self) -> @engine.Param {
+    $| pub impl @engine.ToParam for \{enum_spec.name} with fn to_param(self) -> @engine.Param {
     $|   try! @engine.enum_to_param(self)
     $| }
     $|
-    $| pub impl @engine.FromParam for \{enum_spec.name} with from_param(value) {
+    $| pub impl @engine.FromParam for \{enum_spec.name} with fn from_param(value) {
     $|   try! @engine.enum_from_param(value)
     $| }
   )
@@ -1141,8 +1141,8 @@ fn generate_mapper_code(
     $| }
     $|
   let mapper_fn =
-    $| pub fn \{impl_name}::new(engine : &@engine.Engine) -> \{impl_name} {
-    $|   \{impl_name}::{ engine, }
+    $| pub fn \{impl_name}::\{impl_name}(engine : &@engine.Engine) -> \{impl_name} {
+    $|   { engine, }
     $| }
     $|
   let mut has_sync_methods = false
@@ -1235,7 +1235,7 @@ fn generate_mapper_code(
       ret_type, "result", entity_specs, enum_specs,
     )
     let method_header =
-      $| pub impl \{trait_name} for \{impl_name} with \{m.name}(
+      $| pub impl \{trait_name} for \{impl_name} with fn \{m.name}(
       $|   \{param_sig}
       $| ) -> \{ret_type} {
     let body = if m.name == "create" && m.params.length() == 1 {
@@ -1625,15 +1625,10 @@ fn main {
     "mormgen",
     about="MoonBit ORM CLI tool for generating database schema from MoonBit files",
     options=[
-      @argparse.OptionArg(
-        "output-file",
-        short='o',
-        about="Output file",
-        required=true,
-      ),
+      OptionArg("output-file", short='o', about="Output file", required=true),
     ],
     positionals=[
-      @argparse.PositionArg(
+      PositionArg(
         "input_file",
         about="Input MoonBit source file",
         num_args=@argparse.ValueRange::single(),
@@ -1697,6 +1692,6 @@ fn main {
       println("Generated \{output_file} for mappers: \{to_repr(mapper_names)}")
     }
   } catch {
-    @fs.IOError(e) => println("IOError: \{e}")
+    IOError(e) => println("IOError: \{e}")
   }
 }

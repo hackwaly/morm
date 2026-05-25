@@ -7,7 +7,7 @@ fn enum_test_table() -> @table.Table {
     columns: [
       {
         name: "status",
-        column_type: @table.Enum("status", ["Draft", "Published"]),
+        column_type: Enum("status", ["Draft", "Published"]),
         size: 0,
         nullable: false,
         default_value: Some("'Draft'"),
@@ -60,7 +60,7 @@ fn privilege_test_table() -> @table.Table {
     columns: [
       {
         name: "id",
-        column_type: @table.Int,
+        column_type: Int,
         size: 0,
         nullable: false,
         default_value: None,

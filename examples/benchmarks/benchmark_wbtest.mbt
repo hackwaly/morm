@@ -69,7 +69,7 @@ test "morm query builder render benchmarks" (b : @bench.T) {
 ///|
 test "morm sqlite latency benchmarks" (b : @bench.T) {
   let engine = setup_engine()
-  let mapper = BenchUserMapperImpl::new(engine)
+  let mapper = BenchUserMapperImpl(engine)
   let mut create_id = 10_000
   let mut delete_id = 20_000
   b.bench(name="morm/sqlite/find_all", fn() {
@@ -188,7 +188,7 @@ test "morm sqlite latency benchmarks" (b : @bench.T) {
 ///|
 async test "morm postgresql benchmark queries return expected rows" {
   let engine = setup_postgres_engine()
-  let mapper = BenchUserMapperImpl::new(engine)
+  let mapper = BenchUserMapperImpl(engine)
 
   let find_all = engine.exec(@morm.select_from("bench_user"))
   inspect(find_all.ok, content="true")
@@ -224,7 +224,7 @@ async test "morm postgresql benchmark queries return expected rows" {
   )
   let count_result = engine.exec_raw(
     "SELECT COUNT(*) AS c FROM bench_user WHERE active = ?",
-    [@engine.Int(1)],
+    [Int(1)],
   )
   inspect(count_result.ok, content="true")
   json_inspect(count_result.rows[0], content={ "c": 500 })

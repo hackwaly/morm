@@ -92,7 +92,7 @@ fn parse_pg_dsn(dsn : String) -> PgSQLEngine? {
     user,
     password,
     database,
-    pool: @engine.ConnectionPool::new(8),
+    pool: ConnectionPool(8),
     tx_conn: None,
   })
 }
@@ -108,9 +108,9 @@ pub fn PgSQLEngine::open(dsn : String) -> Result[PgSQLEngine, String] {
 
 ///|
 fn pg_render(stmt : @engine.Statement) -> (String, FixedArray[@engine.Param]) {
-  if stmt is @engine.Upsert(upsert_stmt) {
+  if stmt is Upsert(upsert_stmt) {
     let { table, sets, conflict_target, update_sets } = upsert_stmt
-    let buf = @buffer.new()
+    let buf = StringBuilder()
     buf.write_string("INSERT INTO ")
     buf.write_string(table)
     buf.write_string(" (")
@@ -151,7 +151,7 @@ fn pg_render(stmt : @engine.Statement) -> (String, FixedArray[@engine.Param]) {
 
 ///|
 fn pg_placeholder_sql(sql : String) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut index = 1
   for c in sql {
     if c == '?' {
@@ -172,30 +172,28 @@ fn param_sql(p : @engine.Param) -> String {
     "'\{esc}'"
   }
   match p {
-    @engine.Null => "NULL"
-    @engine.Bool(v) => if v { "TRUE" } else { "FALSE" }
-    @engine.Byte(v) => v.to_int().to_string()
-    @engine.Int(v) => v.to_string()
-    @engine.Int16(v) => v.to_string()
-    @engine.UInt16(v) => v.to_string()
-    @engine.UInt(v) => v.to_string()
-    @engine.UInt64(v) => v.to_string()
-    @engine.Int64(v) => v.to_string()
-    @engine.BigInt(v) => v.to_string()
-    @engine.Float(v) => v.to_string()
-    @engine.Double(v) => v.to_string()
-    @engine.Decimal(v) => v
-    @engine.Date(v, format) => quote(@engine.format_plain_date(v, format))
-    @engine.Time(v, format) => quote(@engine.format_plain_time(v, format))
-    @engine.DateTime(v, format) =>
-      quote(@engine.format_plain_date_time(v, format))
-    @engine.Timestamp(v, format) =>
-      quote(@engine.format_zoned_date_time(v, format))
-    @engine.Uuid(v) => quote(v)
-    @engine.Object(v) => quote(v.to_json().stringify())
-    @engine.Json(v) => quote(v.stringify())
-    @engine.String(v) => quote(v)
-    @engine.Bytes(v) => "decode('\{@engine.bytes_to_hex(v)}', 'hex')"
+    Null => "NULL"
+    Bool(v) => if v { "TRUE" } else { "FALSE" }
+    Byte(v) => v.to_int().to_string()
+    Int(v) => v.to_string()
+    Int16(v) => v.to_string()
+    UInt16(v) => v.to_string()
+    UInt(v) => v.to_string()
+    UInt64(v) => v.to_string()
+    Int64(v) => v.to_string()
+    BigInt(v) => v.to_string()
+    Float(v) => v.to_string()
+    Double(v) => v.to_string()
+    Decimal(v) => v
+    Date(v, format) => quote(@engine.format_plain_date(v, format))
+    Time(v, format) => quote(@engine.format_plain_time(v, format))
+    DateTime(v, format) => quote(@engine.format_plain_date_time(v, format))
+    Timestamp(v, format) => quote(@engine.format_zoned_date_time(v, format))
+    Uuid(v) => quote(v)
+    Object(v) => quote(v.to_json().stringify())
+    Json(v) => quote(v.stringify())
+    String(v) => quote(v)
+    Bytes(v) => "decode('\{@engine.bytes_to_hex(v)}', 'hex')"
   }
 }
 
@@ -303,45 +301,45 @@ fn be_u32(bytes : BytesView) -> Int? {
 ///|
 fn pg_param_from_text(type_oid : Int, text : String) -> @engine.Param {
   match type_oid {
-    16 => @engine.Bool(text is ("t" | "true" | "TRUE"))
+    16 => Bool(text is ("t" | "true" | "TRUE"))
     20 =>
       try @string.parse_int(text) catch {
         _ =>
           try @string.parse_int64(text) catch {
-            _ => @engine.BigInt(BigInt::from_string(text))
+            _ => BigInt(BigInt::from_string(text))
           } noraise {
-            value => @engine.Int64(value)
+            value => Int64(value)
           }
       } noraise {
-        value => @engine.Int(value)
+        value => Int(value)
       }
     21 =>
       try @string.parse_int(text) catch {
-        _ => @engine.String(text)
+        _ => String(text)
       } noraise {
-        value => @engine.Int16(Int16::from_int(value))
+        value => Int16(Int16::from_int(value))
       }
     23 =>
       try @string.parse_int(text) catch {
-        _ => @engine.String(text)
+        _ => String(text)
       } noraise {
-        value => @engine.Int(value)
+        value => Int(value)
       }
     700 =>
       try @string.parse_double(text) catch {
-        _ => @engine.String(text)
+        _ => String(text)
       } noraise {
-        value => @engine.Float(Float::from_double(value))
+        value => Float(Float::from_double(value))
       }
     701 =>
       try @string.parse_double(text) catch {
-        _ => @engine.String(text)
+        _ => String(text)
       } noraise {
-        value => @engine.Double(value)
+        value => Double(value)
       }
-    1700 => @engine.Decimal(text)
-    114 | 3802 => @engine.Json(json_from_text(text))
-    25 | 1042 | 1043 | 2950 => @engine.String(text)
+    1700 => Decimal(text)
+    114 | 3802 => Json(json_from_text(text))
+    25 | 1042 | 1043 | 2950 => String(text)
     _ => @engine.to_param(json_from_text(text))
   }
 }
@@ -379,7 +377,7 @@ async fn read_message(conn : @socket.Tcp) -> (Byte, Bytes)? {
 
 ///|
 async fn write_tagged(conn : @socket.Tcp, tag : Byte, payload : Bytes) -> Bool {
-  let msg = @buffer.new()
+  let msg = Buffer()
   msg.write_byte(tag)
   msg.write_uint_be((payload.length() + 4).reinterpret_as_uint())
   msg.write_bytes(payload)
@@ -391,7 +389,7 @@ async fn write_tagged(conn : @socket.Tcp, tag : Byte, payload : Bytes) -> Bool {
 
 ///|
 async fn send_startup(conn : @socket.Tcp, cfg : PgSQLEngine) -> Bool {
-  let body = @buffer.new()
+  let body = Buffer()
   let protocol_v3 : UInt = 196608
   body.write_uint_be(protocol_v3) // protocol 3.0
   body.write_bytes(@utf8.encode("user"))
@@ -404,7 +402,7 @@ async fn send_startup(conn : @socket.Tcp, cfg : PgSQLEngine) -> Bool {
   body.write_byte(0)
   body.write_byte(0)
   let data = body.to_bytes()
-  let len_buf = @buffer.new()
+  let len_buf = Buffer()
   len_buf.write_uint_be((data.length() + 4).reinterpret_as_uint())
   conn.write(len_buf.to_bytes()) catch {
     _ => return false
@@ -453,7 +451,7 @@ async fn open_pg_connection(cfg : PgSQLEngine) -> Result[@socket.Tcp, String] {
       if kind == 0 {
         ()
       } else if kind == 3 {
-        let p = @buffer.new()
+        let p = Buffer()
         p.write_bytes(@utf8.encode(cfg.password))
         p.write_byte(0)
         if !(write_tagged(conn, b'p', p.to_bytes()) catch { _ => false }) {
@@ -467,7 +465,7 @@ async fn open_pg_connection(cfg : PgSQLEngine) -> Result[@socket.Tcp, String] {
         }
         let salt = payload[4:8].to_owned()
         let md5_pass = pg_md5_password(cfg.user, cfg.password, salt)
-        let p = @buffer.new()
+        let p = Buffer()
         p.write_bytes(@utf8.encode(md5_pass))
         p.write_byte(0)
         if !(write_tagged(conn, b'p', p.to_bytes()) catch { _ => false }) {
@@ -501,7 +499,7 @@ async fn pg_query_on_conn(
   conn : @socket.Tcp,
   sql : String,
 ) -> (@engine.QueryResult, Bool) {
-  let q = @buffer.new()
+  let q = Buffer()
   q.write_bytes(@utf8.encode(sql))
   q.write_byte(0)
   if !(write_tagged(conn, b'Q', q.to_bytes()) catch { _ => false }) {
@@ -579,7 +577,7 @@ async fn pg_query_on_conn(
         pos = pos + 4
         let key = if i < cols.length() { cols[i] } else { "c" + i.to_string() }
         if len < 0 {
-          obj[key] = @engine.Null
+          obj[key] = Null
         } else {
           if pos + len > payload.length() {
             return (fail("pgsql truncated data value"), false)
@@ -762,28 +760,24 @@ fn pg_table_name(table_schema : @table.Table) -> String {
 ///|
 fn pg_type_from_column_type(column_type : @table.ColumnType) -> String {
   match column_type {
-    @table.TinyInt | @table.SmallInt => "SMALLINT"
-    @table.MediumInt | @table.Int => "INTEGER"
-    @table.BigInt => "BIGINT"
-    @table.Float => "REAL"
-    @table.Double => "DOUBLE PRECISION"
-    @table.Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
-    @table.Char(a0) => "CHAR(\{a0})"
-    @table.VarChar(a0) => "VARCHAR(\{a0})"
-    @table.Text | @table.MediumText | @table.LongText => "TEXT"
-    @table.Binary(_)
-    | @table.VarBinary(_)
-    | @table.Blob
-    | @table.MediumBlob
-    | @table.LongBlob => "BYTEA"
-    @table.Date => "DATE"
-    @table.Time => "TIME"
-    @table.DateTime | @table.Timestamp => "TIMESTAMP"
-    @table.Year => "INTEGER"
-    @table.Json => "JSON"
-    @table.JsonB => "JSONB"
-    @table.Enum(name, _) => name
-    @table.Boolean => "BOOLEAN"
+    TinyInt | SmallInt => "SMALLINT"
+    MediumInt | Int => "INTEGER"
+    BigInt => "BIGINT"
+    Float => "REAL"
+    Double => "DOUBLE PRECISION"
+    Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
+    Char(a0) => "CHAR(\{a0})"
+    VarChar(a0) => "VARCHAR(\{a0})"
+    Text | MediumText | LongText => "TEXT"
+    Binary(_) | VarBinary(_) | Blob | MediumBlob | LongBlob => "BYTEA"
+    Date => "DATE"
+    Time => "TIME"
+    DateTime | Timestamp => "TIMESTAMP"
+    Year => "INTEGER"
+    Json => "JSON"
+    JsonB => "JSONB"
+    Enum(name, _) => name
+    Boolean => "BOOLEAN"
   }
 }
 
@@ -810,7 +804,7 @@ fn pg_enum_type_sqls(table_schema : @table.Table) -> Array[String] {
   let sqls : Array[String] = []
   let seen : Map[String, Bool] = Map([])
   for column in table_schema.columns {
-    if column.column_type is @table.Enum(name, values) {
+    if column.column_type is Enum(name, values) {
       let type_name = pg_enum_type_name(table_schema, name)
       if seen.contains(type_name) {
         continue
@@ -903,16 +897,16 @@ fn pg_column_def(column : @table.Column, table_schema : @table.Table) -> String 
     return ""
   }
   let mut col_type = match column.column_type {
-    @table.Json => pg_json_storage_type(column, false)
-    @table.JsonB => pg_json_storage_type(column, true)
-    @table.Enum(name, _) => pg_enum_type_name(table_schema, name)
+    Json => pg_json_storage_type(column, false)
+    JsonB => pg_json_storage_type(column, true)
+    Enum(name, _) => pg_enum_type_name(table_schema, name)
     _ => pg_type_from_column_type(column.column_type)
   }
   let default_value = pg_column_default_expr(column).unwrap_or("")
   if column.auto_increment {
     col_type = if col_type == "BIGINT" { "BIGSERIAL" } else { "SERIAL" }
   }
-  let buf = @buffer.new()
+  let buf = StringBuilder()
   buf.write_string(column.name)
   buf.write_string(" ")
   buf.write_string(col_type)
@@ -1149,7 +1143,7 @@ fn pg_index_sqls(table_schema : @table.Table) -> Array[String] {
     if idx.name is ("" | "PRIMARY") || idx.columns.length() == 0 {
       continue
     }
-    let prefix = if idx.index_type == @table.Unique {
+    let prefix = if idx.index_type == Unique {
       "CREATE UNIQUE INDEX "
     } else {
       "CREATE INDEX "
@@ -1170,23 +1164,23 @@ fn pg_index_sqls(table_schema : @table.Table) -> Array[String] {
 ///|
 fn pg_tx_sql(op : @engine.TxOp) -> String {
   match op {
-    @engine.Begin => "BEGIN"
-    @engine.Commit => "COMMIT"
-    @engine.Rollback => "ROLLBACK"
-    @engine.Savepoint(name) => "SAVEPOINT " + name
-    @engine.RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
+    Begin => "BEGIN"
+    Commit => "COMMIT"
+    Rollback => "ROLLBACK"
+    Savepoint(name) => "SAVEPOINT " + name
+    RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
   }
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with exec(
+pub impl @engine.Engine for PgSQLEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) -> @engine.QueryResult {
   let (sql, params) = match query.to_query() {
-    @engine.Statement(stmt) => pg_render(stmt)
-    @engine.Raw(sql, params) => (pg_placeholder_sql(sql), params)
-    @engine.Tx(op) => (pg_tx_sql(op), [])
+    Statement(stmt) => pg_render(stmt)
+    Raw(sql, params) => (pg_placeholder_sql(sql), params)
+    Tx(op) => (pg_tx_sql(op), [])
   }
   let query = inline_sql(sql, params)
   let res_opt = @async.with_timeout_opt(5000, () => pg_exec_sql(self, query))
@@ -1203,7 +1197,7 @@ pub impl @engine.Engine for PgSQLEngine with exec(
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with page(
+pub impl @engine.Engine for PgSQLEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -1211,22 +1205,22 @@ pub impl @engine.Engine for PgSQLEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let page_query = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
           }
           @engine.Statement(
-            @engine.Select({
+            Select({
               ..sel,
               order_by,
               limit: Some(pageable.size),
@@ -1234,17 +1228,17 @@ pub impl @engine.Engine for PgSQLEngine with page(
             }),
           )
         }
-        _ => @engine.Statement(stmt)
+        _ => Statement(stmt)
       }
-    @engine.Raw(sql, params) =>
-      @engine.Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
+    Raw(sql, params) =>
+      Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
     other => other
   }
   self.exec(page_query)
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with page_raw(
+pub impl @engine.Engine for PgSQLEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1254,7 +1248,7 @@ pub impl @engine.Engine for PgSQLEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with exec_raw(
+pub impl @engine.Engine for PgSQLEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1263,7 +1257,7 @@ pub impl @engine.Engine for PgSQLEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with migrate_table(
+pub impl @engine.Engine for PgSQLEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) -> @engine.QueryResult {
@@ -1315,7 +1309,7 @@ pub impl @engine.Engine for PgSQLEngine with migrate_table(
 }
 
 ///|
-pub impl @engine.Engine for PgSQLEngine with close(self) -> Unit {
+pub impl @engine.Engine for PgSQLEngine with fn close(self) -> Unit {
   if self.tx_conn is Some(conn) {
     self.tx_conn = None
     close_pg_tcp(conn)

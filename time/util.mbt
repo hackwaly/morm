@@ -14,7 +14,7 @@
 
 ///|
 fn add_prefix_zero(s : String, len : Int) -> String {
-  let buf = StringBuilder::new(size_hint=len)
+  let buf = StringBuilder(size_hint=len)
   for i = s.length(); i < len; i = i + 1 {
     buf.write_char('0')
   }
@@ -72,7 +72,7 @@ test "remove_suffix_zero && format_nanos" {
 
 ///|
 fn add_suffix_zero(s : String, len : Int) -> String {
-  let buf = StringBuilder::new(size_hint=len)
+  let buf = StringBuilder(size_hint=len)
   buf.write_string(s)
   for i = s.length(); i < len; i = i + 1 {
     buf.write_char('0')
@@ -95,7 +95,7 @@ fn split(s : String, delimiter : Char) -> Array[String] {
   if s.length() == 0 {
     return spl
   }
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   let delimiter_code = Char::to_int(delimiter).to_uint16()
   for i = 0; i < s.length(); i = i + 1 {
     let code_unit = s.code_unit_at(i)

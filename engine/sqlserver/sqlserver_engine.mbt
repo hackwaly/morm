@@ -92,36 +92,34 @@ fn param_sql(p : @engine.Param) -> String {
     "'\{esc}'"
   }
   match p {
-    @engine.Null => "NULL"
-    @engine.Bool(v) => if v { "1" } else { "0" }
-    @engine.Byte(v) => v.to_int().to_string()
-    @engine.Int(v) => v.to_string()
-    @engine.Int16(v) => v.to_string()
-    @engine.UInt16(v) => v.to_string()
-    @engine.UInt(v) => v.to_string()
-    @engine.UInt64(v) => v.to_string()
-    @engine.Int64(v) => v.to_string()
-    @engine.BigInt(v) => v.to_string()
-    @engine.Float(v) => v.to_string()
-    @engine.Double(v) => v.to_string()
-    @engine.Decimal(v) => v
-    @engine.Date(v, format) => quote(@engine.format_plain_date(v, format))
-    @engine.Time(v, format) => quote(@engine.format_plain_time(v, format))
-    @engine.DateTime(v, format) =>
-      quote(@engine.format_plain_date_time(v, format))
-    @engine.Timestamp(v, format) =>
-      quote(@engine.format_zoned_date_time(v, format))
-    @engine.Uuid(v) => quote(v)
-    @engine.Object(v) => quote(v.to_json().stringify())
-    @engine.Json(v) => quote(v.stringify())
-    @engine.String(v) => quote(v)
-    @engine.Bytes(v) => "0x\{@engine.bytes_to_hex(v)}"
+    Null => "NULL"
+    Bool(v) => if v { "1" } else { "0" }
+    Byte(v) => v.to_int().to_string()
+    Int(v) => v.to_string()
+    Int16(v) => v.to_string()
+    UInt16(v) => v.to_string()
+    UInt(v) => v.to_string()
+    UInt64(v) => v.to_string()
+    Int64(v) => v.to_string()
+    BigInt(v) => v.to_string()
+    Float(v) => v.to_string()
+    Double(v) => v.to_string()
+    Decimal(v) => v
+    Date(v, format) => quote(@engine.format_plain_date(v, format))
+    Time(v, format) => quote(@engine.format_plain_time(v, format))
+    DateTime(v, format) => quote(@engine.format_plain_date_time(v, format))
+    Timestamp(v, format) => quote(@engine.format_zoned_date_time(v, format))
+    Uuid(v) => quote(v)
+    Object(v) => quote(v.to_json().stringify())
+    Json(v) => quote(v.stringify())
+    String(v) => quote(v)
+    Bytes(v) => "0x\{@engine.bytes_to_hex(v)}"
   }
 }
 
 ///|
 fn inline_sql(sql : String, params : FixedArray[@engine.Param]) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut i = 0
   for c in sql {
     if c == '?' && i < params.length() {
@@ -162,7 +160,7 @@ fn split_go_batches(sql : String) -> Array[String] {
 
 ///|
 fn utf16le_bytes(text : String) -> Bytes {
-  let b = @buffer.new()
+  let b = Buffer()
   for c in text {
     b.write_char_utf16le(c)
   }
@@ -171,7 +169,7 @@ fn utf16le_bytes(text : String) -> Bytes {
 
 ///|
 fn mangle_password(password : String) -> Bytes {
-  let b = @buffer.new()
+  let b = Buffer()
   for x in utf16le_bytes(password) {
     let v = x.to_int()
     let y = (((v << 4) & 0xff) | ((v >> 4) & 0xff)) ^ 0xA5
@@ -219,7 +217,7 @@ async fn[IO : @io.Writer] write_tds_message(
     let chunk_len = if remain > max_payload { max_payload } else { remain }
     let is_last = pos + chunk_len >= payload.length()
 
-    let hdr = @buffer.new()
+    let hdr = Buffer()
     hdr.write_byte(packet_type.to_byte())
     hdr.write_byte((if is_last { 1 } else { 0 }).to_byte())
     hdr.write_uint16_be((chunk_len + 8).reinterpret_as_uint().to_uint16())
@@ -242,7 +240,7 @@ async fn[IO : @io.Writer] write_tds_message(
 
 ///|
 async fn[IO : @io.Reader] read_tds_message(conn : IO) -> (Int, Bytes)? {
-  let out = @buffer.new()
+  let out = Buffer()
   let mut packet_type = -1
   let mut done = false
   while !done {
@@ -271,7 +269,7 @@ fn prelogin_payload() -> Bytes {
   let data : Array[Bytes] = [
     b"\x00\x00\x00\x00\x00\x00", b"\x02", b"\x00", b"\x00\x00\x00\x00", b"\x00",
   ]
-  let b = @buffer.new()
+  let b = Buffer()
   let offset_base = data.length() * 5 + 1
   let mut offset = offset_base
   let mut i = 0
@@ -351,7 +349,7 @@ fn login7_payload(cfg : SQLServerEngine, packet_size : Int) -> Bytes {
   let chgp_off = off
   off = off + chgp.length()
 
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_uint_le(off.reinterpret_as_uint())
   b.write_uint_le(0x71000001)
   b.write_uint_le(packet_size.reinterpret_as_uint())
@@ -445,7 +443,7 @@ fn parse_tds_reply(data : Bytes) -> (Bool, String, Int) {
           let start = 8
           let byte_len = mlen * 2
           if start + byte_len <= body.length() {
-            let m = @buffer.new()
+            let m = Buffer()
             let mut i = 0
             while i < mlen {
               m.write_byte(body[start + i * 2])
@@ -618,7 +616,7 @@ async fn tds_exec(cfg : SQLServerEngine, sql : String) -> @engine.QueryResult {
     }
     final_res
   } else {
-    let tls_conn = @tls.Tls::client(conn, verify=false, host=cfg.host) catch {
+    let tls_conn = @tls.Tls::client(conn, host=cfg.host, trust=NoVerification) catch {
       _ => return fail("sqlserver tls handshake failed")
     }
     defer tls_conn.close()
@@ -734,25 +732,24 @@ fn sqlserver_table_name(table_schema : @table.Table) -> String {
 ///|
 fn sqlserver_type_from_column_type(column_type : @table.ColumnType) -> String {
   match column_type {
-    @table.TinyInt => "TINYINT"
-    @table.SmallInt => "SMALLINT"
-    @table.MediumInt | @table.Int => "INT"
-    @table.BigInt => "BIGINT"
-    @table.Float => "REAL"
-    @table.Double => "FLOAT"
-    @table.Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
-    @table.Char(a0) => "NCHAR(\{a0})"
-    @table.VarChar(a0) => "NVARCHAR(\{a0})"
-    @table.Text | @table.MediumText | @table.LongText => "NVARCHAR(MAX)"
-    @table.Binary(a0) => "BINARY(\{a0})"
-    @table.VarBinary(_) | @table.Blob | @table.MediumBlob | @table.LongBlob =>
-      "VARBINARY(MAX)"
-    @table.Date => "DATE"
-    @table.Time => "TIME"
-    @table.DateTime | @table.Timestamp => "DATETIME2"
-    @table.Year => "INT"
-    @table.Json | @table.JsonB => "NVARCHAR(MAX)"
-    @table.Enum(_, values) =>
+    TinyInt => "TINYINT"
+    SmallInt => "SMALLINT"
+    MediumInt | Int => "INT"
+    BigInt => "BIGINT"
+    Float => "REAL"
+    Double => "FLOAT"
+    Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
+    Char(a0) => "NCHAR(\{a0})"
+    VarChar(a0) => "NVARCHAR(\{a0})"
+    Text | MediumText | LongText => "NVARCHAR(MAX)"
+    Binary(a0) => "BINARY(\{a0})"
+    VarBinary(_) | Blob | MediumBlob | LongBlob => "VARBINARY(MAX)"
+    Date => "DATE"
+    Time => "TIME"
+    DateTime | Timestamp => "DATETIME2"
+    Year => "INT"
+    Json | JsonB => "NVARCHAR(MAX)"
+    Enum(_, values) =>
       if values.length() == 0 {
         "NVARCHAR(255)"
       } else {
@@ -764,7 +761,7 @@ fn sqlserver_type_from_column_type(column_type : @table.ColumnType) -> String {
         }
         "NVARCHAR(\{max_len})"
       }
-    @table.Boolean => "BIT"
+    Boolean => "BIT"
   }
 }
 
@@ -802,7 +799,7 @@ fn sqlserver_column_def(column : @table.Column) -> String {
     return ""
   }
   let col_type = match column.column_type {
-    @table.Json | @table.JsonB => sqlserver_json_storage_type(column)
+    Json | JsonB => sqlserver_json_storage_type(column)
     _ => sqlserver_type_from_column_type(column.column_type)
   }
   let default_value = sqlserver_column_default_expr(column).unwrap_or("")
@@ -813,7 +810,7 @@ fn sqlserver_column_def(column : @table.Column) -> String {
   } else {
     default_value
   }
-  let buf = @buffer.new()
+  let buf = StringBuilder()
   buf.write_string(column.name)
   buf.write_string(" ")
   buf.write_string(col_type)
@@ -959,7 +956,7 @@ fn sqlserver_index_sqls(table_schema : @table.Table) -> Array[String] {
     if idx.name is ("" | "PRIMARY") || idx.columns.length() == 0 {
       continue
     }
-    let unique = if idx.index_type == @table.Unique { "UNIQUE " } else { "" }
+    let unique = if idx.index_type == Unique { "UNIQUE " } else { "" }
     let cols_sql = idx.columns.join(", ")
     sqls.push(
       "IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = '\{idx.name}') CREATE \{unique}INDEX \{idx.name} ON \{table_name} (\{cols_sql})",
@@ -971,30 +968,30 @@ fn sqlserver_index_sqls(table_schema : @table.Table) -> Array[String] {
 ///|
 fn sqlserver_tx_sql(op : @engine.TxOp) -> String {
   match op {
-    @engine.Begin => "BEGIN TRANSACTION"
-    @engine.Commit => "COMMIT TRANSACTION"
-    @engine.Rollback => "ROLLBACK TRANSACTION"
-    @engine.Savepoint(name) => "SAVE TRANSACTION " + name
-    @engine.RollbackToSavepoint(name) => "ROLLBACK TRANSACTION " + name
+    Begin => "BEGIN TRANSACTION"
+    Commit => "COMMIT TRANSACTION"
+    Rollback => "ROLLBACK TRANSACTION"
+    Savepoint(name) => "SAVE TRANSACTION " + name
+    RollbackToSavepoint(name) => "ROLLBACK TRANSACTION " + name
   }
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with exec(
+pub impl @engine.Engine for SQLServerEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) -> @engine.QueryResult {
   let (sql, params) = match query.to_query() {
-    @engine.Statement(stmt) => @engine.render_default_sql(stmt)
-    @engine.Raw(sql, params) => (sql, params)
-    @engine.Tx(op) => (sqlserver_tx_sql(op), [])
+    Statement(stmt) => @engine.render_default_sql(stmt)
+    Raw(sql, params) => (sql, params)
+    Tx(op) => (sqlserver_tx_sql(op), [])
   }
   let query = inline_sql(sql, params)
   tds_exec(self, query)
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with page(
+pub impl @engine.Engine for SQLServerEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -1002,22 +999,22 @@ pub impl @engine.Engine for SQLServerEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let page_query = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
           }
           @engine.Statement(
-            @engine.Select({
+            Select({
               ..sel,
               order_by,
               limit: Some(pageable.size),
@@ -1025,10 +1022,10 @@ pub impl @engine.Engine for SQLServerEngine with page(
             }),
           )
         }
-        _ => @engine.Statement(stmt)
+        _ => Statement(stmt)
       }
-    @engine.Raw(sql, params) =>
-      @engine.Raw(
+    Raw(sql, params) =>
+      Raw(
         sql + " OFFSET \{offset} ROWS FETCH NEXT \{pageable.size} ROWS ONLY",
         params,
       )
@@ -1038,7 +1035,7 @@ pub impl @engine.Engine for SQLServerEngine with page(
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with page_raw(
+pub impl @engine.Engine for SQLServerEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1048,7 +1045,7 @@ pub impl @engine.Engine for SQLServerEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with exec_raw(
+pub impl @engine.Engine for SQLServerEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1057,7 +1054,7 @@ pub impl @engine.Engine for SQLServerEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with migrate_table(
+pub impl @engine.Engine for SQLServerEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) -> @engine.QueryResult {
@@ -1086,6 +1083,6 @@ pub impl @engine.Engine for SQLServerEngine with migrate_table(
 }
 
 ///|
-pub impl @engine.Engine for SQLServerEngine with close(_self) -> Unit {
+pub impl @engine.Engine for SQLServerEngine with fn close(_self) -> Unit {
   ()
 }

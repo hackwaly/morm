@@ -26,18 +26,18 @@ pub impl @engine.FromParam for User
 pub struct UserMapperImpl {
   engine : &@engine.Engine
 }
-pub fn UserMapperImpl::new(&@engine.Engine) -> Self
+pub fn UserMapperImpl::UserMapperImpl(&@engine.Engine) -> Self
 pub impl UserMapper for UserMapperImpl
 
 // Type aliases
 
 // Traits
 pub trait UserMapper {
-  async save(Self, User) -> Bool
-  async find_user_by_id(Self, Int) -> User?
-  async update(Self, User) -> Bool
-  async update_active_by_id(Self, Int, Int) -> Bool
-  async delete(Self, User) -> Bool
-  async delete_by_id(Self, Int) -> Bool
+  async fn save(Self, User) -> Bool
+  async fn find_user_by_id(Self, Int) -> User?
+  async fn update(Self, User) -> Bool
+  async fn update_active_by_id(Self, Int, Int) -> Bool
+  async fn delete(Self, User) -> Bool
+  async fn delete_by_id(Self, Int) -> Bool
 }
 

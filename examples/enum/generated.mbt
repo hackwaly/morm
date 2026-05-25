@@ -1,21 +1,21 @@
 ///|
-pub impl @engine.ToParam for PostStatus with to_param(self) -> @engine.Param {
+pub impl @engine.ToParam for PostStatus with fn to_param(self) -> @engine.Param {
   try! @engine.enum_to_param(self)
 }
 
 ///|
-pub impl @engine.FromParam for PostStatus with from_param(value) {
+pub impl @engine.FromParam for PostStatus with fn from_param(value) {
   try! @engine.enum_from_param(value)
 }
 
 ///|
-pub impl @oboard/morm.Entity for Post with table(_self) -> @oboard/morm.Table {
+pub impl @oboard/morm.Entity for Post with fn table(_self) -> @oboard/morm.Table {
   Post::table()
 }
 
 ///|
 pub fn Post::table() -> @oboard/morm.Table {
-  @oboard/morm.Table::{
+  {
     name: "post",
     schema: None,
     catalog: None,
@@ -94,13 +94,13 @@ pub fn Post::_from(row : Map[String, @engine.Param]) -> Post {
     None => panic()
   }
   let status : PostStatus = (try! @engine.from_param(status_param) : PostStatus)
-  return Post::{ id, title, status }
+  return { id, title, status }
 }
 
 ///|
-pub impl @engine.FromParam for Post with from_param(value) {
+pub impl @engine.FromParam for Post with fn from_param(value) {
   match value {
-    @engine.Object(obj) => {
+    Object(obj) => {
       let row : Map[String, @engine.Param] = Map([])
       for key in obj.keys() {
         if obj.get(key) is Some(value) {
@@ -109,9 +109,6 @@ pub impl @engine.FromParam for Post with from_param(value) {
       }
       Post::_from(row)
     }
-    _ =>
-      raise @engine.ParamDecodeError(
-        "Post::from_param: expected Json object row",
-      )
+    _ => raise ParamDecodeError("Post::from_param: expected Json object row")
   }
 }

@@ -4,7 +4,7 @@ pub(all) suberror BsonError {
 } derive(Eq, ToJson)
 
 ///|
-pub impl Show for BsonError with output(self : BsonError, logger : &Logger) {
+pub impl Show for BsonError with fn output(self : BsonError, logger : &Logger) {
   logger.write_string(self.to_json().stringify())
 }
 
@@ -74,13 +74,13 @@ fn write_value(buf : @buffer.Buffer, key : String, value : Json) -> Unit {
 
 ///|
 fn encode_entries(entries : Iter[(String, Json)]) -> Bytes {
-  let body = @buffer.new()
+  let body = Buffer()
   for entry in entries {
     let (key, value) = entry
     write_value(body, key, value)
   }
   body.write_byte(0)
-  let out = @buffer.new()
+  let out = Buffer()
   out.write_int_le(body.length() + 4)
   out.write_bytes(body.to_bytes())
   out.to_bytes()
@@ -119,7 +119,7 @@ pub fn to_document_bytes(value : Json) -> Bytes raise BsonError {
 pub fn json_bytes_to_bytes(value : Json) -> Bytes? {
   match value {
     Array(items) => {
-      let out = @buffer.new(size_hint=items.length())
+      let out = Buffer(size_hint=items.length())
       for item in items {
         match item {
           Number(n, ..) if n.to_int().to_double() == n => {
@@ -170,7 +170,7 @@ fn read_i64(data : Bytes, offset : Int) -> Int64 raise BsonError {
 
 ///|
 fn bytes_hex(data : Bytes) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   for byte in data {
     let hi = byte.to_int() / 16
     let lo = byte.to_int() % 16

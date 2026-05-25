@@ -54,39 +54,27 @@ async test "sqlserver sql execution coverage" {
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_test (id, name, score, active) VALUES (?, ?, ?, ?)",
-      [
-        @engine.Int(1),
-        @engine.String("A"),
-        @engine.Double(10.5),
-        @engine.Bool(true),
-      ],
+      [Int(1), String("A"), Double(10.5), Bool(true)],
     ).ok,
     content="true",
   )
   inspect(
     engine.exec_raw(
       "INSERT INTO morm_engine_tx_test (id, name, score, active) VALUES (?, ?, ?, ?)",
-      [
-        @engine.Int(2),
-        @engine.String("B"),
-        @engine.Double(20.5),
-        @engine.Bool(false),
-      ],
+      [Int(2), String("B"), Double(20.5), Bool(false)],
     ).ok,
     content="true",
   )
 
   inspect(
     engine.exec_raw("UPDATE morm_engine_tx_test SET score = ? WHERE id = ?", [
-      @engine.Double(88.8),
-      @engine.Int(2),
+      Double(88.8),
+      Int(2),
     ]).ok,
     content="true",
   )
   inspect(
-    engine.exec_raw("DELETE FROM morm_engine_tx_test WHERE id = ?", [
-      @engine.Int(2),
-    ]).ok,
+    engine.exec_raw("DELETE FROM morm_engine_tx_test WHERE id = ?", [Int(2)]).ok,
     content="true",
   )
   let batch_sql =

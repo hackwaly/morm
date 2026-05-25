@@ -148,7 +148,7 @@ fn parse_mongodb_dsn(dsn : String) -> MongoDBEngine? {
     },
     user,
     password,
-    pool: @engine.ConnectionPool::new(8),
+    pool: ConnectionPool(8),
   })
 }
 
@@ -163,7 +163,7 @@ pub fn MongoDBEngine::open(dsn : String) -> Result[MongoDBEngine, String] {
 ///|
 fn param_to_json(value : @engine.Param) -> Json {
   match value {
-    @engine.Bytes(data) => @bson.from_bytes(data) catch { _ => data.to_json() }
+    Bytes(data) => @bson.from_bytes(data) catch { _ => data.to_json() }
     _ => value.to_json()
   }
 }
@@ -171,23 +171,23 @@ fn param_to_json(value : @engine.Param) -> Json {
 ///|
 fn json_to_param(value : Json) -> @engine.Param {
   match value {
-    Null => @engine.Null
-    True => @engine.Bool(true)
-    False => @engine.Bool(false)
+    Null => Null
+    True => Bool(true)
+    False => Bool(false)
     Number(n, ..) =>
       if n.to_int().to_double() == n {
-        @engine.Int(n.to_int())
+        Int(n.to_int())
       } else {
-        @engine.Double(n)
+        Double(n)
       }
-    String(s) => @engine.String(s)
-    Array(_) | Object(_) => @engine.Json(value)
+    String(s) => String(s)
+    Array(_) | Object(_) => Json(value)
   }
 }
 
 ///|
 fn i32le_bytes(v : Int) -> Bytes {
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_int_le(v)
   b.to_bytes()
 }
@@ -359,10 +359,10 @@ fn write_bson_document_field(
 
 ///|
 fn encode_skip_empty_options() -> Bytes {
-  let body = @buffer.new()
+  let body = Buffer()
   write_bson_bool_field(body, "skipEmptyExchange", true)
   body.write_byte(0)
-  let out = @buffer.new()
+  let out = Buffer()
   out.write_int_le(body.length() + 4)
   out.write_bytes(body.to_bytes())
   out.to_bytes()
@@ -370,7 +370,7 @@ fn encode_skip_empty_options() -> Bytes {
 
 ///|
 fn encode_sasl_start_command(engine : MongoDBEngine, payload : String) -> Bytes {
-  let body = @buffer.new()
+  let body = Buffer()
   write_bson_i32_field(body, "saslStart", 1)
   write_bson_string_field(body, "mechanism", "SCRAM-SHA-256")
   write_bson_binary_field(body, "payload", @utf8.encode(payload))
@@ -378,7 +378,7 @@ fn encode_sasl_start_command(engine : MongoDBEngine, payload : String) -> Bytes 
   write_bson_document_field(body, "options", encode_skip_empty_options())
   write_bson_string_field(body, "$db", engine.auth_database)
   body.write_byte(0)
-  let out = @buffer.new()
+  let out = Buffer()
   out.write_int_le(body.length() + 4)
   out.write_bytes(body.to_bytes())
   out.to_bytes()
@@ -390,13 +390,13 @@ fn encode_sasl_continue_command(
   conversation_id : Int,
   payload : String,
 ) -> Bytes {
-  let body = @buffer.new()
+  let body = Buffer()
   write_bson_i32_field(body, "saslContinue", 1)
   write_bson_i32_field(body, "conversationId", conversation_id)
   write_bson_binary_field(body, "payload", @utf8.encode(payload))
   write_bson_string_field(body, "$db", engine.auth_database)
   body.write_byte(0)
-  let out = @buffer.new()
+  let out = Buffer()
   out.write_int_le(body.length() + 4)
   out.write_bytes(body.to_bytes())
   out.to_bytes()
@@ -427,7 +427,7 @@ fn scram_hmac(key : Bytes, message : Bytes) -> FixedArray[Byte] {
 
 ///|
 fn i32be_bytes(v : Int) -> Bytes {
-  let out = @buffer.new(size_hint=4)
+  let out = Buffer(size_hint=4)
   out.write_byte(((v >> 24) & 0xFF).to_byte())
   out.write_byte(((v >> 16) & 0xFF).to_byte())
   out.write_byte(((v >> 8) & 0xFF).to_byte())
@@ -455,7 +455,7 @@ fn pbkdf2_sha256(
   iterations : Int,
   key_len : Int,
 ) -> Bytes {
-  let out = @buffer.new(size_hint=key_len)
+  let out = Buffer(size_hint=key_len)
   let block_count = (key_len + 31) / 32
   for block = 1; block <= block_count; block = block + 1 {
     let mut u = scram_hmac(password, salt + i32be_bytes(block))
@@ -761,7 +761,7 @@ fn write_bson_string_field(
 ) -> Unit {
   buf.write_byte(0x02)
   write_cstring(buf, key)
-  let tmp = @buffer.new()
+  let tmp = Buffer()
   tmp.write_string_utf8(value)
   let bytes = tmp.to_bytes()
   buf.write_int_le(bytes.length() + 1)
@@ -798,13 +798,13 @@ fn encode_getmore_command(
   table : String,
   batch_size : Int,
 ) -> Bytes {
-  let body = @buffer.new()
+  let body = Buffer()
   write_bson_i64_field(body, "getMore", cursor_id)
   write_bson_string_field(body, "collection", table)
   write_bson_i32_field(body, "batchSize", batch_size)
   write_bson_string_field(body, "$db", engine.database)
   body.write_byte(0)
-  let out = @buffer.new()
+  let out = Buffer()
   out.write_int_le(body.length() + 4)
   out.write_bytes(body.to_bytes())
   out.to_bytes()
@@ -1968,14 +1968,14 @@ fn decode_json_where_array(value : Json) -> FixedArray[@engine.Where]? {
       is { "col": String(col), "value": where_value, "ty": String(ty), .. } else {
       return None
     }
-    let where_ty = match ty {
-      "eq" => Some(@engine.WhereType::Eq)
-      "ne" => Some(@engine.WhereType::Ne)
-      "gt" => Some(@engine.WhereType::Gt)
-      "lt" => Some(@engine.WhereType::Lt)
-      "gte" => Some(@engine.WhereType::Gte)
-      "lte" => Some(@engine.WhereType::Lte)
-      "like" => Some(@engine.WhereType::Like)
+    let where_ty : @engine.WhereType? = match ty {
+      "eq" => Some(Eq)
+      "ne" => Some(Ne)
+      "gt" => Some(Gt)
+      "lt" => Some(Lt)
+      "gte" => Some(Gte)
+      "lte" => Some(Lte)
+      "like" => Some(Like)
       _ => None
     }
     guard where_ty is Some(where_ty) else { return None }
@@ -2133,7 +2133,7 @@ fn tx_noop() -> @engine.QueryResult {
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with migrate_table(
+pub impl @engine.Engine for MongoDBEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) {
@@ -2150,13 +2150,13 @@ pub impl @engine.Engine for MongoDBEngine with migrate_table(
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with exec(
+pub impl @engine.Engine for MongoDBEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) {
   let stmt = match query.to_query() {
-    @engine.Statement(stmt) => stmt
-    @engine.Raw(sql, _params) => {
+    Statement(stmt) => stmt
+    Raw(sql, _params) => {
       guard parse_command(sql) is Some(cmd) else {
         return fail_result("mongodb_engine expects JSON commands")
       }
@@ -2165,7 +2165,7 @@ pub impl @engine.Engine for MongoDBEngine with exec(
         None => return fail_result("mongodb_engine command decode failed")
       }
     }
-    @engine.Tx(_) => return tx_noop()
+    Tx(_) => return tx_noop()
   }
   match stmt {
     Select(select_stmt) => run_select(self, select_stmt)
@@ -2177,7 +2177,7 @@ pub impl @engine.Engine for MongoDBEngine with exec(
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with page(
+pub impl @engine.Engine for MongoDBEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -2185,16 +2185,16 @@ pub impl @engine.Engine for MongoDBEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let stmt = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
@@ -2215,7 +2215,7 @@ pub impl @engine.Engine for MongoDBEngine with page(
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with page_raw(
+pub impl @engine.Engine for MongoDBEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -2225,7 +2225,7 @@ pub impl @engine.Engine for MongoDBEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with exec_raw(
+pub impl @engine.Engine for MongoDBEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -2234,6 +2234,6 @@ pub impl @engine.Engine for MongoDBEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for MongoDBEngine with close(self) -> Unit {
+pub impl @engine.Engine for MongoDBEngine with fn close(self) -> Unit {
   self.pool.close(close_tcp)
 }

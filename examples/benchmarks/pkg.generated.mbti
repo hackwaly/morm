@@ -39,18 +39,18 @@ pub impl @engine.FromParam for BenchUser
 pub struct BenchUserMapperImpl {
   engine : &@engine.Engine
 }
-pub fn BenchUserMapperImpl::new(&@engine.Engine) -> Self
+pub fn BenchUserMapperImpl::BenchUserMapperImpl(&@engine.Engine) -> Self
 pub impl BenchUserMapper for BenchUserMapperImpl
 
 // Type aliases
 
 // Traits
 pub trait BenchUserMapper {
-  async save(Self, BenchUser) -> Bool
-  async find_user_by_id(Self, Int) -> BenchUser?
-  async find_users_by_active(Self, Int) -> FixedArray[BenchUser]
-  async find_users_page_by_active(Self, Int, @engine.Pageable) -> @engine.Page[BenchUser]
-  async update_active_by_id(Self, Int, Int) -> Bool
-  async delete_by_id(Self, Int) -> Bool
+  async fn save(Self, BenchUser) -> Bool
+  async fn find_user_by_id(Self, Int) -> BenchUser?
+  async fn find_users_by_active(Self, Int) -> FixedArray[BenchUser]
+  async fn find_users_page_by_active(Self, Int, @engine.Pageable) -> @engine.Page[BenchUser]
+  async fn update_active_by_id(Self, Int, Int) -> Bool
+  async fn delete_by_id(Self, Int) -> Bool
 }
 

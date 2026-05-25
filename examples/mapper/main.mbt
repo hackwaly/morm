@@ -34,7 +34,7 @@ async fn main {
   }
 
   // Runtime usage through generated mapper impl.
-  let mapper = UserMapperImpl::new(engine)
+  let mapper = UserMapperImpl(engine)
 
   if mapper.find_user_by_id(1) is Some(user) {
     println("mapper: user#1 email=\{user.email}")

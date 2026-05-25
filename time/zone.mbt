@@ -33,7 +33,7 @@ pub fn fixed_zone(
   dst? : Bool = false,
 ) -> Zone raise Error {
   let offset = ZoneOffset::from_seconds(offset_seconds, abbrev~, dst~)
-  Zone::{ id, offsets: [offset], transitions: [] }
+  { id, offsets: [offset], transitions: [] }
 }
 
 ///|
@@ -49,7 +49,7 @@ pub fn Zone::to_string(self : Zone) -> String {
 }
 
 ///|
-pub impl Show for Zone with output(self : Zone, logger : &Logger) -> Unit {
+pub impl Show for Zone with fn output(self : Zone, logger : &Logger) -> Unit {
   logger.write_string(self.to_string())
 }
 
@@ -137,7 +137,7 @@ fn to_int_be(b : FixedArray[Byte], start : Int) -> Int {
 ///|
 /// Helper function to convert a null-terminated ASCII string to a MoonBit String.
 fn ascii_to_string(b : FixedArray[Byte], start : Int) -> String {
-  let result = StringBuilder::new()
+  let result = StringBuilder()
   let mut start = start
   while b[start] != 0 {
     result.write_char(Int::unsafe_to_char(b[start].to_int()))

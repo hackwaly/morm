@@ -213,7 +213,7 @@ pub fn render_default_sql(stmt : Statement) -> (String, FixedArray[Param]) {
   match stmt {
     Select(select_stmt) => {
       let { select, from, joins, where_, order_by, limit, offset } = select_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("SELECT ")
       if select.is_empty() {
         buf.write_string("*")
@@ -255,7 +255,7 @@ pub fn render_default_sql(stmt : Statement) -> (String, FixedArray[Param]) {
     }
     Insert(insert_stmt) => {
       let { into, columns, values, rows } = insert_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("INSERT INTO ")
       buf.write_string(into)
       if !columns.is_empty() {
@@ -279,7 +279,7 @@ pub fn render_default_sql(stmt : Statement) -> (String, FixedArray[Param]) {
     }
     Upsert(upsert_stmt) => {
       let { table, sets, conflict_target: _, update_sets } = upsert_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("INSERT INTO ")
       buf.write_string(table)
       buf.write_string(" (")
@@ -299,7 +299,7 @@ pub fn render_default_sql(stmt : Statement) -> (String, FixedArray[Param]) {
     }
     Update(update_stmt) => {
       let { table, sets, where_ } = update_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("UPDATE ")
       buf.write_string(table)
       buf.write_string(" SET ")
@@ -312,7 +312,7 @@ pub fn render_default_sql(stmt : Statement) -> (String, FixedArray[Param]) {
     }
     Delete(delete_stmt) => {
       let { from, where_ } = delete_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("DELETE FROM ")
       buf.write_string(from)
       if !where_.is_empty() {
@@ -353,6 +353,9 @@ pub(all) struct QueryResult {
 } derive(ToJson, FromJson, Eq)
 
 ///|
-pub impl Show for QueryResult with output(self : QueryResult, logger : &Logger) {
+pub impl Show for QueryResult with fn output(
+  self : QueryResult,
+  logger : &Logger,
+) {
   write_json_show(self, logger)
 }

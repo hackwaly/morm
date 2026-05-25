@@ -1,11 +1,11 @@
 ///|
-pub impl @oboard/morm.Entity for User with table(_self) -> @oboard/morm.Table {
+pub impl @oboard/morm.Entity for User with fn table(_self) -> @oboard/morm.Table {
   User::table()
 }
 
 ///|
 pub fn User::table() -> @oboard/morm.Table {
-  @oboard/morm.Table::{
+  {
     name: "user",
     schema: None,
     catalog: None,
@@ -84,13 +84,13 @@ pub fn User::_from(row : Map[String, @engine.Param]) -> User {
     None => panic()
   }
   let active : Int = (try! @engine.from_param(active_param) : Int)
-  return User::{ id, email, active }
+  return { id, email, active }
 }
 
 ///|
-pub impl @engine.FromParam for User with from_param(value) {
+pub impl @engine.FromParam for User with fn from_param(value) {
   match value {
-    @engine.Object(obj) => {
+    Object(obj) => {
       let row : Map[String, @engine.Param] = Map([])
       for key in obj.keys() {
         if obj.get(key) is Some(value) {
@@ -99,10 +99,7 @@ pub impl @engine.FromParam for User with from_param(value) {
       }
       User::_from(row)
     }
-    _ =>
-      raise @engine.ParamDecodeError(
-        "User::from_param: expected Json object row",
-      )
+    _ => raise ParamDecodeError("User::from_param: expected Json object row")
   }
 }
 
@@ -112,12 +109,14 @@ pub struct UserMapperImpl {
 }
 
 ///|
-pub fn UserMapperImpl::new(engine : &@engine.Engine) -> UserMapperImpl {
-  UserMapperImpl::{ engine, }
+pub fn UserMapperImpl::UserMapperImpl(
+  engine : &@engine.Engine,
+) -> UserMapperImpl {
+  { engine, }
 }
 
 ///|
-pub impl UserMapper for UserMapperImpl with find_user_by_id(self, id : Int) -> User? {
+pub impl UserMapper for UserMapperImpl with fn find_user_by_id(self, id : Int) -> User? {
   let q = @morm.select_from("user").where_eq("id", id)
   if self.engine.exec(q).rows is [result, ..] {
     return Some(User::_from(result))
@@ -126,7 +125,7 @@ pub impl UserMapper for UserMapperImpl with find_user_by_id(self, id : Int) -> U
 }
 
 ///|
-pub impl UserMapper for UserMapperImpl with find_users_by_active(
+pub impl UserMapper for UserMapperImpl with fn find_users_by_active(
   self,
   active : Int,
 ) -> FixedArray[User] {
@@ -137,7 +136,7 @@ pub impl UserMapper for UserMapperImpl with find_users_by_active(
 }
 
 ///|
-pub impl UserMapper for UserMapperImpl with find_users_page_by_active(
+pub impl UserMapper for UserMapperImpl with fn find_users_page_by_active(
   self,
   active : Int,
   pageable : @engine.Pageable,

@@ -101,27 +101,14 @@ fn sqlite_table_name(table_schema : @table.Table) -> String {
 ///|
 fn sqlite_col_type(column_type : @table.ColumnType) -> String {
   match column_type {
-    @table.TinyInt
-    | @table.SmallInt
-    | @table.MediumInt
-    | @table.Int
-    | @table.BigInt
-    | @table.Year => "INTEGER"
-    @table.Float | @table.Double | @table.Decimal(_, _) => "REAL"
-    @table.Boolean => "INTEGER"
-    @table.Blob
-    | @table.MediumBlob
-    | @table.LongBlob
-    | @table.Binary(_)
-    | @table.VarBinary(_) => "BLOB"
-    @table.Date | @table.Time | @table.DateTime | @table.Timestamp => "TEXT"
-    @table.Json | @table.JsonB => "TEXT"
-    @table.Enum(_, _) => "TEXT"
-    @table.Char(_)
-    | @table.VarChar(_)
-    | @table.Text
-    | @table.MediumText
-    | @table.LongText => "TEXT"
+    TinyInt | SmallInt | MediumInt | Int | BigInt | Year => "INTEGER"
+    Float | Double | Decimal(_, _) => "REAL"
+    Boolean => "INTEGER"
+    Blob | MediumBlob | LongBlob | Binary(_) | VarBinary(_) => "BLOB"
+    Date | Time | DateTime | Timestamp => "TEXT"
+    Json | JsonB => "TEXT"
+    Enum(_, _) => "TEXT"
+    Char(_) | VarChar(_) | Text | MediumText | LongText => "TEXT"
   }
 }
 
@@ -160,10 +147,10 @@ fn render_column_def(column : @table.Column) -> String {
   }
   let default_value = sqlite_column_default_expr(column).unwrap_or("")
   let col_type = match column.column_type {
-    @table.Json | @table.JsonB => sqlite_json_storage_type(column)
+    Json | JsonB => sqlite_json_storage_type(column)
     _ => sqlite_col_type(column.column_type)
   }
-  let buf = @buffer.new()
+  let buf = StringBuilder()
   buf.write_string(column.name)
   if column.primary_key && column.auto_increment {
     buf.write_string(" INTEGER PRIMARY KEY AUTOINCREMENT")
@@ -259,7 +246,7 @@ fn render_index_sqls(table_schema : @table.Table) -> Array[String] {
     if idx.name is ("" | "PRIMARY") || idx.columns.length() == 0 {
       continue
     }
-    let unique = if idx.index_type == @table.Unique { "UNIQUE " } else { "" }
+    let unique = if idx.index_type == Unique { "UNIQUE " } else { "" }
     let cols_sql = idx.columns.join(", ")
     sqls.push(
       "CREATE \{unique}INDEX IF NOT EXISTS \{idx.name} ON \{table_name} (\{cols_sql})",
@@ -275,7 +262,7 @@ fn render_sqlite(
   match stmt {
     Select(select_stmt) => {
       let { select, from, joins, where_, order_by, limit, offset } = select_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("SELECT ")
       if select.is_empty() {
         buf.write_string("*")
@@ -317,7 +304,7 @@ fn render_sqlite(
     }
     Insert(insert_stmt) => {
       let { into, columns, values, rows } = insert_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("INSERT INTO ")
       buf.write_string(into)
       if !columns.is_empty() {
@@ -341,7 +328,7 @@ fn render_sqlite(
     }
     Upsert(upsert_stmt) => {
       let { table, sets, conflict_target, update_sets } = upsert_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("INSERT INTO ")
       buf.write_string(table)
       buf.write_string(" (")
@@ -369,7 +356,7 @@ fn render_sqlite(
     }
     Update(update_stmt) => {
       let { table, sets, where_ } = update_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("UPDATE ")
       buf.write_string(table)
       buf.write_string(" SET ")
@@ -382,7 +369,7 @@ fn render_sqlite(
     }
     Delete(delete_stmt) => {
       let { from, where_ } = delete_stmt
-      let buf = @buffer.new()
+      let buf = StringBuilder()
       buf.write_string("DELETE FROM ")
       buf.write_string(from)
       if !where_.is_empty() {
@@ -397,16 +384,16 @@ fn render_sqlite(
 ///|
 fn sqlite_tx_sql(op : @engine.TxOp) -> String {
   match op {
-    @engine.Begin => "BEGIN"
-    @engine.Commit => "COMMIT"
-    @engine.Rollback => "ROLLBACK"
-    @engine.Savepoint(name) => "SAVEPOINT " + name
-    @engine.RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
+    Begin => "BEGIN"
+    Commit => "COMMIT"
+    Rollback => "ROLLBACK"
+    Savepoint(name) => "SAVEPOINT " + name
+    RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
   }
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with migrate_table(
+pub impl @engine.Engine for SQLiteEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) -> @engine.QueryResult {
@@ -444,32 +431,32 @@ fn SQLiteEngine::exec_sql(
     let stmt = self.conn.prepare(sql + ";")
     params.eachi((index, val) => {
       match val {
-        @engine.Double(v) => stmt.bind(index~, val=v)
-        @engine.Float(v) => stmt.bind(index~, val=v.to_double())
-        @engine.Byte(v) => stmt.bind(index~, val=v.to_int())
-        @engine.Int(v) => stmt.bind(index~, val=v)
-        @engine.Int16(v) => stmt.bind(index~, val=v.to_int())
-        @engine.UInt16(v) => stmt.bind(index~, val=v.to_int())
-        @engine.UInt(v) => stmt.bind(index~, val=v.to_string())
-        @engine.UInt64(v) => stmt.bind(index~, val=v.to_string())
-        @engine.Int64(v) => stmt.bind(index~, val=v)
-        @engine.BigInt(v) => stmt.bind(index~, val=v.to_string())
-        @engine.Decimal(v) => stmt.bind(index~, val=v)
-        @engine.Date(v, format) =>
+        Double(v) => stmt.bind(index~, val=v)
+        Float(v) => stmt.bind(index~, val=v.to_double())
+        Byte(v) => stmt.bind(index~, val=v.to_int())
+        Int(v) => stmt.bind(index~, val=v)
+        Int16(v) => stmt.bind(index~, val=v.to_int())
+        UInt16(v) => stmt.bind(index~, val=v.to_int())
+        UInt(v) => stmt.bind(index~, val=v.to_string())
+        UInt64(v) => stmt.bind(index~, val=v.to_string())
+        Int64(v) => stmt.bind(index~, val=v)
+        BigInt(v) => stmt.bind(index~, val=v.to_string())
+        Decimal(v) => stmt.bind(index~, val=v)
+        Date(v, format) =>
           stmt.bind(index~, val=@engine.format_plain_date(v, format))
-        @engine.Time(v, format) =>
+        Time(v, format) =>
           stmt.bind(index~, val=@engine.format_plain_time(v, format))
-        @engine.DateTime(v, format) =>
+        DateTime(v, format) =>
           stmt.bind(index~, val=@engine.format_plain_date_time(v, format))
-        @engine.Timestamp(v, format) =>
+        Timestamp(v, format) =>
           stmt.bind(index~, val=@engine.format_zoned_date_time(v, format))
-        @engine.Uuid(v) => stmt.bind(index~, val=v)
-        @engine.Object(v) => stmt.bind(index~, val=v.to_json().stringify())
-        @engine.Json(v) => stmt.bind(index~, val=v.stringify())
-        @engine.String(v) => stmt.bind(index~, val=v)
-        @engine.Bytes(v) => stmt.bind(index~, val=v)
-        @engine.Bool(v) => stmt.bind(index~, val=if v { 1 } else { 0 })
-        @engine.Null => stmt.bind_null(index~)
+        Uuid(v) => stmt.bind(index~, val=v)
+        Object(v) => stmt.bind(index~, val=v.to_json().stringify())
+        Json(v) => stmt.bind(index~, val=v.stringify())
+        String(v) => stmt.bind(index~, val=v)
+        Bytes(v) => stmt.bind(index~, val=v)
+        Bool(v) => stmt.bind(index~, val=if v { 1 } else { 0 })
+        Null => stmt.bind_null(index~)
       }
     })
     // 构造第一行的 Json（按列名 -> 值）
@@ -481,26 +468,26 @@ fn SQLiteEngine::exec_sql(
       while index < col_cnt {
         let name = stmt.column_name(index~)
         match stmt.column_type(index~) {
-          SQLITE_NULL => obj[name] = @engine.Null
+          SQLITE_NULL => obj[name] = Null
           SQLITE_INTEGER => {
             let v : Int = stmt.column(index~)
-            obj[name] = @engine.Int(v)
+            obj[name] = Int(v)
           }
           SQLITE_FLOAT => {
             let v = stmt.column(index~)
-            obj[name] = @engine.Double(v)
+            obj[name] = Double(v)
           }
           SQLITE_TEXT => {
             let s = stmt.column(index~)
-            obj[name] = @engine.String(s)
+            obj[name] = String(s)
           }
           SQLITE_BLOB => {
             let b : Bytes = stmt.column(index~)
-            obj[name] = @engine.Bytes(b)
+            obj[name] = Bytes(b)
           }
           _ => {
             let s = stmt.column_blob_as_string(index~)
-            obj[name] = @engine.String(s)
+            obj[name] = String(s)
           }
         }
         index = index + 1
@@ -524,20 +511,20 @@ fn SQLiteEngine::exec_sql(
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with exec(
+pub impl @engine.Engine for SQLiteEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) -> @engine.QueryResult {
   let (sql, params) = match query.to_query() {
-    @engine.Statement(stmt) => render_sqlite(stmt)
-    @engine.Raw(sql, params) => (sql, params)
-    @engine.Tx(op) => (sqlite_tx_sql(op), [])
+    Statement(stmt) => render_sqlite(stmt)
+    Raw(sql, params) => (sql, params)
+    Tx(op) => (sqlite_tx_sql(op), [])
   }
   self.exec_sql(sql, params)
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with page(
+pub impl @engine.Engine for SQLiteEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -545,22 +532,22 @@ pub impl @engine.Engine for SQLiteEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let page_query = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
           }
           @engine.Statement(
-            @engine.Select({
+            Select({
               ..sel,
               order_by,
               limit: Some(pageable.size),
@@ -568,17 +555,17 @@ pub impl @engine.Engine for SQLiteEngine with page(
             }),
           )
         }
-        _ => @engine.Statement(stmt)
+        _ => Statement(stmt)
       }
-    @engine.Raw(sql, params) =>
-      @engine.Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
+    Raw(sql, params) =>
+      Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
     other => other
   }
   self.exec(page_query)
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with page_raw(
+pub impl @engine.Engine for SQLiteEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -588,7 +575,7 @@ pub impl @engine.Engine for SQLiteEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with exec_raw(
+pub impl @engine.Engine for SQLiteEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -597,6 +584,6 @@ pub impl @engine.Engine for SQLiteEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for SQLiteEngine with close(self) -> Unit {
+pub impl @engine.Engine for SQLiteEngine with fn close(self) -> Unit {
   try! self.conn.close()
 }

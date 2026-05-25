@@ -3,7 +3,7 @@ fn select_stmt_with_null(
   where_ty : @engine.WhereType,
   value : @engine.Param,
 ) -> @engine.Statement {
-  @engine.Select({
+  Select({
     select: "*",
     from: "users",
     joins: [],

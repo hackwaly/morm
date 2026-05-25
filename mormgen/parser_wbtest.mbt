@@ -110,7 +110,7 @@ test "generate mapper code for set list and map returns" {
   let mapper_specs = parse_mappers_from_ast(ast, source, entity_specs)
   let code = generate_mapper_code(mapper_specs[0], entity_specs, [])
   inspect(
-    code.contains("let out : @set.Set[User] = @set.Set::new()"),
+    code.contains("let out : @set.Set[User] = @set.Set([])"),
     content="true",
   )
   inspect(code.contains("@list.List::from_array(out)"), content="true")

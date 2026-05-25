@@ -43,7 +43,7 @@ pub fn Period::from_string(str : String) -> Period raise Error {
   if str.code_unit_at(0) != 'P' {
     fail(invalid_period_err)
   }
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   let mut years = 0
   let mut months = 0
   let mut days = 0
@@ -76,7 +76,7 @@ pub fn Period::to_string(self : Period) -> String {
   if self.is_zero() {
     return "P0D"
   }
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   buf.write_char('P')
   if self.years != 0 {
     buf.write_string(self.years.to_string())
@@ -94,7 +94,7 @@ pub fn Period::to_string(self : Period) -> String {
 }
 
 ///|
-pub impl Show for Period with output(self : Period, logger : &Logger) {
+pub impl Show for Period with fn output(self : Period, logger : &Logger) {
   logger.write_string(self.to_string())
 }
 

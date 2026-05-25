@@ -10,14 +10,10 @@ async fn main {
   }
 
   // Mapper implementation is generated in `user_mapper.g.mbt`.
-  let mapper = UserMapperImpl::new(engine)
+  let mapper = UserMapperImpl(engine)
 
   // C: save
-  let created = mapper.save(User::{
-    id: 1,
-    email: "alice@example.com",
-    active: 1,
-  })
+  let created = mapper.save({ id: 1, email: "alice@example.com", active: 1 })
   if !created {
     println("save user failed")
     return
@@ -32,11 +28,7 @@ async fn main {
   }
 
   // U: update
-  let updated = mapper.update(User::{
-    id: 1,
-    email: "alice@example.com",
-    active: 0,
-  })
+  let updated = mapper.update({ id: 1, email: "alice@example.com", active: 0 })
   if !updated {
     println("update user failed")
     return
@@ -58,11 +50,7 @@ async fn main {
   }
 
   // D: delete
-  let deleted = mapper.delete(User::{
-    id: 1,
-    email: "alice@example.com",
-    active: 1,
-  })
+  let deleted = mapper.delete({ id: 1, email: "alice@example.com", active: 1 })
   if !deleted {
     println("delete user failed")
     return
@@ -70,11 +58,7 @@ async fn main {
   println("curd: deleted=true")
 
   // Re-create and delete by naming-convention method
-  let recreated = mapper.save(User::{
-    id: 2,
-    email: "bob@example.com",
-    active: 1,
-  })
+  let recreated = mapper.save({ id: 2, email: "bob@example.com", active: 1 })
   if !recreated {
     println("save bob failed")
     return

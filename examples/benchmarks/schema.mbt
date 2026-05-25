@@ -14,12 +14,12 @@ pub struct BenchPost {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl @morm.Entity for BenchUser with table(_self) -> @morm.Table {
+pub impl @morm.Entity for BenchUser with fn table(_self) -> @morm.Table {
   BenchUser::table()
 }
 
 ///|
-pub impl @morm.Entity for BenchPost with table(_self) -> @morm.Table {
+pub impl @morm.Entity for BenchPost with fn table(_self) -> @morm.Table {
   BenchPost::table()
 }
 
@@ -60,9 +60,7 @@ fn bench_row_param(
   match row.get(key) {
     Some(value) => value
     None =>
-      raise @engine.ParamDecodeError(
-        "benchmark row decode: missing column \{key}",
-      )
+      raise ParamDecodeError("benchmark row decode: missing column \{key}")
   }
 }
 
@@ -80,7 +78,7 @@ fn bench_row_int(
     Byte(value) => value.to_int()
     Json(Number(value, ..)) => value.to_int()
     _ =>
-      raise @engine.ParamDecodeError(
+      raise ParamDecodeError(
         "benchmark row decode: expected Int-compatible column \{key}",
       )
   }
@@ -95,7 +93,7 @@ fn bench_row_string(
     String(value) => value
     Json(String(value)) => value
     _ =>
-      raise @engine.ParamDecodeError(
+      raise ParamDecodeError(
         "benchmark row decode: expected String-compatible column \{key}",
       )
   }
@@ -133,10 +131,10 @@ fn BenchPost::decode_from(
 }
 
 ///|
-pub impl @engine.FromParam for BenchUser with from_param(value) {
+pub impl @engine.FromParam for BenchUser with fn from_param(value) {
   match value {
-    @engine.Object(obj) => BenchUser::decode_from(obj)
-    @engine.Json(Object(obj)) => {
+    Object(obj) => BenchUser::decode_from(obj)
+    Json(Object(obj)) => {
       let row : Map[String, @engine.Param] = Map([])
       for key in obj.keys() {
         if obj.get(key) is Some(v) {
@@ -145,18 +143,15 @@ pub impl @engine.FromParam for BenchUser with from_param(value) {
       }
       BenchUser::decode_from(row)
     }
-    _ =>
-      raise @engine.ParamDecodeError(
-        "BenchUser::from_param: expected object row",
-      )
+    _ => raise ParamDecodeError("BenchUser::from_param: expected object row")
   }
 }
 
 ///|
-pub impl @engine.FromParam for BenchPost with from_param(value) {
+pub impl @engine.FromParam for BenchPost with fn from_param(value) {
   match value {
-    @engine.Object(obj) => BenchPost::decode_from(obj)
-    @engine.Json(Object(obj)) => {
+    Object(obj) => BenchPost::decode_from(obj)
+    Json(Object(obj)) => {
       let row : Map[String, @engine.Param] = Map([])
       for key in obj.keys() {
         if obj.get(key) is Some(v) {
@@ -165,9 +160,6 @@ pub impl @engine.FromParam for BenchPost with from_param(value) {
       }
       BenchPost::decode_from(row)
     }
-    _ =>
-      raise @engine.ParamDecodeError(
-        "BenchPost::from_param: expected object row",
-      )
+    _ => raise ParamDecodeError("BenchPost::from_param: expected object row")
   }
 }

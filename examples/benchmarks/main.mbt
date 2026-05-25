@@ -209,7 +209,7 @@ async fn run_main_metrics(
 ///|
 async fn main {
   let engine = setup_postgres_engine()
-  let mapper = BenchUserMapperImpl::new(engine)
+  let mapper = BenchUserMapperImpl(engine)
   let rows = run_main_metrics(engine, mapper)
   println("[")
   rows.eachi((index, row) => {

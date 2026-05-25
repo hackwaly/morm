@@ -154,7 +154,7 @@ pub fn ZonedDateTime::from_string(str : String) -> ZonedDateTime raise Error {
 ///|
 /// Returns a string representing this datetime, like "2008-08-08T20:00:00+8:00[Asia/Beijing]"
 pub fn ZonedDateTime::to_string(self : ZonedDateTime) -> String {
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   buf.write_string(self.datetime.to_string())
   buf.write_string(self.offset.to_string())
   if self.zone != utc_zone {
@@ -171,7 +171,7 @@ pub fn ZonedDateTime::to_string(self : ZonedDateTime) -> String {
 }
 
 ///|
-pub impl Show for ZonedDateTime with output(
+pub impl Show for ZonedDateTime with fn output(
   self : ZonedDateTime,
   logger : &Logger,
 ) -> Unit {
@@ -179,17 +179,17 @@ pub impl Show for ZonedDateTime with output(
 }
 
 ///|
-pub impl Eq for ZonedDateTime with equal(self, other) -> Bool {
+pub impl Eq for ZonedDateTime with fn equal(self, other) -> Bool {
   self.to_string() == other.to_string()
 }
 
 ///|
-pub impl ToJson for ZonedDateTime with to_json(self) -> Json {
+pub impl ToJson for ZonedDateTime with fn to_json(self) -> Json {
   Json::string(self.to_string())
 }
 
 ///|
-pub impl @json.FromJson for ZonedDateTime with from_json(json, path) {
+pub impl @json.FromJson for ZonedDateTime with fn from_json(json, path) {
   guard json is String(s) else {
     json_decode_error(path, "ZonedDateTime::from_json: expected string")
   }

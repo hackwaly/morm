@@ -60,7 +60,7 @@ pub fn Duration::from_string(str : String) -> Duration raise Error {
   let mut minutes = 0L
   let mut seconds = 0L
   let mut nanoseconds = 0L
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   for i = 2; i < str.length(); i = i + 1 {
     match str.code_unit_at(i) {
       '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | '-' =>
@@ -105,7 +105,7 @@ pub fn Duration::to_string(self : Duration) -> String {
   if self.is_zero() {
     return "PT0S"
   }
-  let buf = StringBuilder::new(size_hint=0)
+  let buf = StringBuilder(size_hint=0)
   buf.write_string("PT")
   let total_secs = self.secs
   let hours = total_secs / seconds_per_hour
@@ -137,7 +137,7 @@ pub fn Duration::to_string(self : Duration) -> String {
 }
 
 ///|
-pub impl Show for Duration with output(self : Duration, logger : &Logger) -> Unit {
+pub impl Show for Duration with fn output(self : Duration, logger : &Logger) -> Unit {
   logger.write_string(self.to_string())
 }
 

@@ -30,7 +30,7 @@ pub fn PlainDate::of(
   if !validate_ymd(year, month, day) {
     fail(invalid_date_err)
   }
-  PlainDate::{ year, month, day }
+  { year, month, day }
 }
 
 ///|
@@ -49,7 +49,7 @@ pub fn PlainDate::from_year_ord(
     day -= calc_days_in_month(year, month)
     month += 1
   }
-  PlainDate::{ year, month, day }
+  { year, month, day }
 }
 
 ///|
@@ -91,7 +91,7 @@ pub fn PlainDate::from_string(str : String) -> PlainDate raise Error {
 ///|
 /// Returns a string representing the date.
 pub fn PlainDate::to_string(self : PlainDate) -> String {
-  let buf = StringBuilder::new(size_hint=11)
+  let buf = StringBuilder(size_hint=11)
   if self.year < 0 {
     buf.write_char('-')
   }
@@ -104,17 +104,17 @@ pub fn PlainDate::to_string(self : PlainDate) -> String {
 }
 
 ///|
-pub impl Show for PlainDate with output(self : PlainDate, logger : &Logger) {
+pub impl Show for PlainDate with fn output(self : PlainDate, logger : &Logger) {
   logger.write_string(self.to_string())
 }
 
 ///|
-pub impl ToJson for PlainDate with to_json(self) -> Json {
+pub impl ToJson for PlainDate with fn to_json(self) -> Json {
   Json::string(self.to_string())
 }
 
 ///|
-pub impl @json.FromJson for PlainDate with from_json(json, path) {
+pub impl @json.FromJson for PlainDate with fn from_json(json, path) {
   guard json is String(s) else {
     json_decode_error(path, "PlainDate::from_json: expected string")
   }
@@ -125,12 +125,15 @@ pub impl @json.FromJson for PlainDate with from_json(json, path) {
 }
 
 ///|
-pub impl Eq for PlainDate with equal(self : PlainDate, other : PlainDate) -> Bool {
+pub impl Eq for PlainDate with fn equal(self : PlainDate, other : PlainDate) -> Bool {
   self.compare(other) == 0
 }
 
 ///|
-pub impl Compare for PlainDate with compare(self : PlainDate, other : PlainDate) -> Int {
+pub impl Compare for PlainDate with fn compare(
+  self : PlainDate,
+  other : PlainDate,
+) -> Int {
   if self.year > other.year {
     1
   } else if self.year < other.year {
@@ -454,7 +457,7 @@ fn create_from_valid(year : Int, month : Int, day : Int) -> PlainDate {
   if d > max_day {
     d = max_day
   }
-  PlainDate::{ year, month, day: d }
+  { year, month, day: d }
 }
 
 ///|

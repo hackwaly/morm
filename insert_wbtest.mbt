@@ -6,7 +6,7 @@ struct InsertAutoUser {
 } derive(ToJson, FromJson)
 
 ///|
-impl Entity for InsertAutoUser with table(_self) -> Table {
+impl Entity for InsertAutoUser with fn table(_self) -> Table {
   new_table("insert_auto_user", columns=[
     { ..new_column("id", Int), primary_key: true, auto_increment: true },
     { ..new_column("name", VarChar(255)), nullable: false },
@@ -15,8 +15,8 @@ impl Entity for InsertAutoUser with table(_self) -> Table {
 }
 
 ///|
-impl @engine.FromParam for InsertAutoUser with from_param(_value) {
-  raise @engine.ParamDecodeError("InsertAutoUser::from_param is unused")
+impl @engine.FromParam for InsertAutoUser with fn from_param(_value) {
+  raise ParamDecodeError("InsertAutoUser::from_param is unused")
 }
 
 ///|

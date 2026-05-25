@@ -362,14 +362,14 @@ pub using @engine {type WhereType}
 
 // Traits
 pub(open) trait Driver {
-  open(Self, String) -> Result[Self, DbError]
-  close(Self) -> Result[Self, DbError]
-  ping(Self) -> Result[Unit, DbError]
-  exec(Self, String, FixedArray[@engine.Param]) -> Result[Unit, DbError]
-  query(Self, String, FixedArray[@engine.Param]) -> Result[FixedArray[Json], DbError]
+  fn open(Self, String) -> Result[Self, DbError]
+  fn close(Self) -> Result[Self, DbError]
+  fn ping(Self) -> Result[Unit, DbError]
+  fn exec(Self, String, FixedArray[@engine.Param]) -> Result[Unit, DbError]
+  fn query(Self, String, FixedArray[@engine.Param]) -> Result[FixedArray[Json], DbError]
 }
 
 pub(open) trait Entity : ToJson + @engine.FromParam {
-  table(Self) -> @table.Table
+  fn table(Self) -> @table.Table
 }
 

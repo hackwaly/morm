@@ -8,12 +8,15 @@ pub(all) enum SQLiteValue {
 } derive(Eq)
 
 ///|
-pub impl Show for SQLiteValue with output(self : SQLiteValue, logger : &Logger) {
+pub impl Show for SQLiteValue with fn output(
+  self : SQLiteValue,
+  logger : &Logger,
+) {
   logger.write_string(self.to_json().stringify())
 }
 
 ///|
-pub impl ToJson for SQLiteValue with to_json(self) -> Json {
+pub impl ToJson for SQLiteValue with fn to_json(self) -> Json {
   match self {
     Null => Json::null()
     Integer(v) => v.to_json()
@@ -24,7 +27,7 @@ pub impl ToJson for SQLiteValue with to_json(self) -> Json {
 }
 
 ///|
-pub impl @json.FromJson for SQLiteValue with from_json(json, path) {
+pub impl @json.FromJson for SQLiteValue with fn from_json(json, path) {
   match json {
     Null => Null
     True => Integer(1)
@@ -37,19 +40,19 @@ pub impl @json.FromJson for SQLiteValue with from_json(json, path) {
       }
     String(s) => Text(s)
     _ =>
-      raise @json.JsonDecodeError(
+      raise JsonDecodeError(
         (path, "SQLiteValue::from_json: expected null/bool/number/string"),
       )
   }
 }
 
 ///|
-pub impl @engine.ToParam for SQLiteValue with to_param(self) -> @engine.Param {
+pub impl @engine.ToParam for SQLiteValue with fn to_param(self) -> @engine.Param {
   match self {
-    Null => @engine.Null
-    Integer(v) => @engine.Int64(v)
-    Real(v) => @engine.Double(v)
-    Text(v) => @engine.String(v)
-    Blob(v) => @engine.Bytes(v)
+    Null => Null
+    Integer(v) => Int64(v)
+    Real(v) => Double(v)
+    Text(v) => String(v)
+    Blob(v) => Bytes(v)
   }
 }

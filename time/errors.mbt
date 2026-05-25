@@ -35,5 +35,5 @@ fn[T] json_decode_error(
   path : @json.JsonPath,
   msg : String,
 ) -> T raise @json.JsonDecodeError {
-  raise @json.JsonDecodeError((path, msg))
+  raise JsonDecodeError((path, msg))
 }

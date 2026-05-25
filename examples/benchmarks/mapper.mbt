@@ -1,15 +1,15 @@
 ///|
 pub trait BenchUserMapper {
-  async save(Self, entity : BenchUser) -> Bool
-  async find_user_by_id(Self, id : Int) -> BenchUser?
-  async find_users_by_active(Self, active : Int) -> FixedArray[BenchUser]
-  async find_users_page_by_active(
+  async fn save(Self, entity : BenchUser) -> Bool
+  async fn find_user_by_id(Self, id : Int) -> BenchUser?
+  async fn find_users_by_active(Self, active : Int) -> FixedArray[BenchUser]
+  async fn find_users_page_by_active(
     Self,
     active : Int,
     pageable : @engine.Pageable,
   ) -> @engine.Page[BenchUser]
-  async update_active_by_id(Self, active : Int, id : Int) -> Bool
-  async delete_by_id(Self, id : Int) -> Bool
+  async fn update_active_by_id(Self, active : Int, id : Int) -> Bool
+  async fn delete_by_id(Self, id : Int) -> Bool
 }
 
 ///|
@@ -18,19 +18,22 @@ pub struct BenchUserMapperImpl {
 }
 
 ///|
-pub fn BenchUserMapperImpl::new(
+pub fn BenchUserMapperImpl::BenchUserMapperImpl(
   engine : &@engine.Engine,
 ) -> BenchUserMapperImpl {
   { engine, }
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with save(self, entity) {
+pub impl BenchUserMapper for BenchUserMapperImpl with fn save(self, entity) {
   self.engine.exec(@morm.upsert_into("bench_user").from(entity)).ok
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with find_user_by_id(self, id) {
+pub impl BenchUserMapper for BenchUserMapperImpl with fn find_user_by_id(
+  self,
+  id,
+) {
   let q = @morm.select_from("bench_user").where_eq("id", id)
   if self.engine.exec(q).rows is [row, ..] {
     return Some(BenchUser::_from(row))
@@ -39,7 +42,7 @@ pub impl BenchUserMapper for BenchUserMapperImpl with find_user_by_id(self, id) 
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with find_users_by_active(
+pub impl BenchUserMapper for BenchUserMapperImpl with fn find_users_by_active(
   self,
   active,
 ) {
@@ -51,7 +54,7 @@ pub impl BenchUserMapper for BenchUserMapperImpl with find_users_by_active(
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with find_users_page_by_active(
+pub impl BenchUserMapper for BenchUserMapperImpl with fn find_users_page_by_active(
   self,
   active,
   pageable,
@@ -64,7 +67,7 @@ pub impl BenchUserMapper for BenchUserMapperImpl with find_users_page_by_active(
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with update_active_by_id(
+pub impl BenchUserMapper for BenchUserMapperImpl with fn update_active_by_id(
   self,
   active,
   id,
@@ -75,6 +78,6 @@ pub impl BenchUserMapper for BenchUserMapperImpl with update_active_by_id(
 }
 
 ///|
-pub impl BenchUserMapper for BenchUserMapperImpl with delete_by_id(self, id) {
+pub impl BenchUserMapper for BenchUserMapperImpl with fn delete_by_id(self, id) {
   self.engine.exec(@morm.delete_from("bench_user").where_eq("id", id)).ok
 }

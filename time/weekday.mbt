@@ -24,7 +24,7 @@ pub(all) enum Weekday {
 } derive(Eq)
 
 ///|
-pub impl Show for Weekday with output(self : Weekday, logger : &Logger) {
+pub impl Show for Weekday with fn output(self : Weekday, logger : &Logger) {
   let text = match self {
     Monday => "Monday"
     Tuesday => "Tuesday"

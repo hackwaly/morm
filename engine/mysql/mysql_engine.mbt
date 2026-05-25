@@ -86,7 +86,7 @@ fn parse_mysql_dsn(dsn : String) -> MySQLEngine? {
     user,
     password,
     database,
-    pool: @engine.ConnectionPool::new(8),
+    pool: ConnectionPool(8),
     tx_conn: None,
   })
 }
@@ -107,36 +107,34 @@ fn param_sql(p : @engine.Param) -> String {
     "'\{esc}'"
   }
   match p {
-    @engine.Null => "NULL"
-    @engine.Bool(v) => if v { "TRUE" } else { "FALSE" }
-    @engine.Byte(v) => v.to_int().to_string()
-    @engine.Int(v) => v.to_string()
-    @engine.Int16(v) => v.to_string()
-    @engine.UInt16(v) => v.to_string()
-    @engine.UInt(v) => v.to_string()
-    @engine.UInt64(v) => v.to_string()
-    @engine.Int64(v) => v.to_string()
-    @engine.BigInt(v) => v.to_string()
-    @engine.Float(v) => v.to_string()
-    @engine.Double(v) => v.to_string()
-    @engine.Decimal(v) => v
-    @engine.Date(v, format) => quote(@engine.format_plain_date(v, format))
-    @engine.Time(v, format) => quote(@engine.format_plain_time(v, format))
-    @engine.DateTime(v, format) =>
-      quote(@engine.format_plain_date_time(v, format))
-    @engine.Timestamp(v, format) =>
-      quote(@engine.format_zoned_date_time(v, format))
-    @engine.Uuid(v) => quote(v)
-    @engine.Object(v) => quote(v.to_json().stringify())
-    @engine.Json(v) => quote(v.stringify())
-    @engine.String(v) => quote(v)
-    @engine.Bytes(v) => "x'\{@engine.bytes_to_hex(v)}'"
+    Null => "NULL"
+    Bool(v) => if v { "TRUE" } else { "FALSE" }
+    Byte(v) => v.to_int().to_string()
+    Int(v) => v.to_string()
+    Int16(v) => v.to_string()
+    UInt16(v) => v.to_string()
+    UInt(v) => v.to_string()
+    UInt64(v) => v.to_string()
+    Int64(v) => v.to_string()
+    BigInt(v) => v.to_string()
+    Float(v) => v.to_string()
+    Double(v) => v.to_string()
+    Decimal(v) => v
+    Date(v, format) => quote(@engine.format_plain_date(v, format))
+    Time(v, format) => quote(@engine.format_plain_time(v, format))
+    DateTime(v, format) => quote(@engine.format_plain_date_time(v, format))
+    Timestamp(v, format) => quote(@engine.format_zoned_date_time(v, format))
+    Uuid(v) => quote(v)
+    Object(v) => quote(v.to_json().stringify())
+    Json(v) => quote(v.stringify())
+    String(v) => quote(v)
+    Bytes(v) => "x'\{@engine.bytes_to_hex(v)}'"
   }
 }
 
 ///|
 fn inline_sql(sql : String, params : FixedArray[@engine.Param]) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut i = 0
   for c in sql {
     if c == '?' && i < params.length() {
@@ -156,14 +154,14 @@ fn fail(message : String) -> @engine.QueryResult {
 
 ///|
 fn le_u24(v : Int) -> Bytes {
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_uint_le(v.reinterpret_as_uint())
   b.to_bytes()[:3].to_owned()
 }
 
 ///|
 fn le_u32(v : Int) -> Bytes {
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_uint_le(v.reinterpret_as_uint())
   b.to_bytes()[:4].to_owned()
 }
@@ -171,7 +169,7 @@ fn le_u32(v : Int) -> Bytes {
 ///|
 fn bytes_xor(a : Bytes, b : Bytes) -> Bytes {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
-  let out = @buffer.new()
+  let out = Buffer()
   let mut i = 0
   while i < n {
     out.write_byte((a[i].to_int() ^ b[i].to_int()).to_byte())
@@ -351,7 +349,7 @@ async fn write_packet(conn : @socket.Tcp, seq : Int, payload : Bytes) -> Bool {
   conn.write(le_u24(payload.length())) catch {
     _ => return false
   }
-  let s = @buffer.new()
+  let s = Buffer()
   s.write_byte((seq & 0xff).to_byte())
   conn.write(s.to_bytes()) catch {
     _ => return false
@@ -411,7 +409,7 @@ fn plugin_name_from_handshake(payload : Bytes) -> String {
 
 ///|
 fn seed_from_handshake(payload : Bytes) -> Bytes {
-  let out = @buffer.new()
+  let out = Buffer()
   let mut i = 1
   while i < payload.length() && payload[i] != 0 {
     i = i + 1
@@ -465,7 +463,7 @@ fn make_handshake_response(
   let caps = client_caps & server_caps
   let auth = auth_token(plugin, cfg.password, seed)
 
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_bytes(le_u32(caps))
   b.write_bytes(le_u32(1024 * 1024))
   b.write_byte(45) // utf8mb4_general_ci
@@ -617,7 +615,7 @@ async fn mysql_query_on_conn(
   conn : @socket.Tcp,
   sql : String,
 ) -> (@engine.QueryResult, Bool) {
-  let q = @buffer.new()
+  let q = Buffer()
   q.write_byte(0x03) // COM_QUERY
   q.write_bytes(@utf8.encode(sql))
   if !(write_packet(conn, 0, q.to_bytes()) catch { _ => false }) {
@@ -742,7 +740,7 @@ async fn mysql_query_on_conn(
         pos = np
         obj[cols[c]] = match v {
           Some(s) => @engine.to_param(json_from_text(s))
-          None => @engine.Null
+          None => Null
         }
         c = c + 1
       }
@@ -863,37 +861,37 @@ fn mysql_table_name(table_schema : @table.Table) -> String {
 ///|
 fn mysql_type_from_column_type(column_type : @table.ColumnType) -> String {
   match column_type {
-    @table.TinyInt => "TINYINT"
-    @table.SmallInt => "SMALLINT"
-    @table.MediumInt => "MEDIUMINT"
-    @table.Int => "INT"
-    @table.BigInt => "BIGINT"
-    @table.Float => "FLOAT"
-    @table.Double => "DOUBLE"
-    @table.Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
-    @table.Char(a0) => "CHAR(\{a0})"
-    @table.VarChar(a0) => "VARCHAR(\{a0})"
-    @table.Text => "TEXT"
-    @table.MediumText => "MEDIUMTEXT"
-    @table.LongText => "LONGTEXT"
-    @table.Binary(a0) => "BINARY(\{a0})"
-    @table.VarBinary(a0) => "VARBINARY(\{a0})"
-    @table.Blob => "BLOB"
-    @table.MediumBlob => "MEDIUMBLOB"
-    @table.LongBlob => "LONGBLOB"
-    @table.Date => "DATE"
-    @table.Time => "TIME"
-    @table.DateTime => "DATETIME"
-    @table.Timestamp => "TIMESTAMP"
-    @table.Year => "YEAR"
-    @table.Json | @table.JsonB => "JSON"
-    @table.Enum(_, values) =>
+    TinyInt => "TINYINT"
+    SmallInt => "SMALLINT"
+    MediumInt => "MEDIUMINT"
+    Int => "INT"
+    BigInt => "BIGINT"
+    Float => "FLOAT"
+    Double => "DOUBLE"
+    Decimal(a0, a1) => "DECIMAL(\{a0}, \{a1})"
+    Char(a0) => "CHAR(\{a0})"
+    VarChar(a0) => "VARCHAR(\{a0})"
+    Text => "TEXT"
+    MediumText => "MEDIUMTEXT"
+    LongText => "LONGTEXT"
+    Binary(a0) => "BINARY(\{a0})"
+    VarBinary(a0) => "VARBINARY(\{a0})"
+    Blob => "BLOB"
+    MediumBlob => "MEDIUMBLOB"
+    LongBlob => "LONGBLOB"
+    Date => "DATE"
+    Time => "TIME"
+    DateTime => "DATETIME"
+    Timestamp => "TIMESTAMP"
+    Year => "YEAR"
+    Json | JsonB => "JSON"
+    Enum(_, values) =>
       "ENUM(" +
       values
       .map(value => "'" + value.replace(old="'", new="''") + "'")
       .join(", ") +
       ")"
-    @table.Boolean => "TINYINT(1)"
+    Boolean => "TINYINT(1)"
   }
 }
 
@@ -931,11 +929,11 @@ fn mysql_column_def(column : @table.Column) -> String {
     return ""
   }
   let col_type = match column.column_type {
-    @table.Json | @table.JsonB => mysql_json_storage_type(column)
+    Json | JsonB => mysql_json_storage_type(column)
     _ => mysql_type_from_column_type(column.column_type)
   }
   let default_value = mysql_column_default_expr(column).unwrap_or("")
-  let buf = @buffer.new()
+  let buf = StringBuilder()
   buf.write_string(column.name)
   buf.write_string(" ")
   buf.write_string(col_type)
@@ -1077,7 +1075,7 @@ fn mysql_index_sqls(table_schema : @table.Table) -> Array[String] {
     if idx.name is ("" | "PRIMARY") || idx.columns.length() == 0 {
       continue
     }
-    let prefix = if idx.index_type == @table.Unique {
+    let prefix = if idx.index_type == Unique {
       "CREATE UNIQUE INDEX "
     } else {
       "CREATE INDEX "
@@ -1098,30 +1096,30 @@ fn mysql_index_sqls(table_schema : @table.Table) -> Array[String] {
 ///|
 fn mysql_tx_sql(op : @engine.TxOp) -> String {
   match op {
-    @engine.Begin => "START TRANSACTION"
-    @engine.Commit => "COMMIT"
-    @engine.Rollback => "ROLLBACK"
-    @engine.Savepoint(name) => "SAVEPOINT " + name
-    @engine.RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
+    Begin => "START TRANSACTION"
+    Commit => "COMMIT"
+    Rollback => "ROLLBACK"
+    Savepoint(name) => "SAVEPOINT " + name
+    RollbackToSavepoint(name) => "ROLLBACK TO SAVEPOINT " + name
   }
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with exec(
+pub impl @engine.Engine for MySQLEngine with fn exec(
   self,
   query : &@engine.QueryBuilder,
 ) -> @engine.QueryResult {
   let (sql, params) = match query.to_query() {
-    @engine.Statement(stmt) => @engine.render_default_sql(stmt)
-    @engine.Raw(sql, params) => (sql, params)
-    @engine.Tx(op) => (mysql_tx_sql(op), [])
+    Statement(stmt) => @engine.render_default_sql(stmt)
+    Raw(sql, params) => (sql, params)
+    Tx(op) => (mysql_tx_sql(op), [])
   }
   let final_sql = inline_sql(sql, params)
   mysql_exec_sql(self, final_sql)
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with page(
+pub impl @engine.Engine for MySQLEngine with fn page(
   self,
   query : &@engine.QueryBuilder,
   pageable : @engine.Pageable,
@@ -1129,22 +1127,22 @@ pub impl @engine.Engine for MySQLEngine with page(
   let normalized_page = if pageable.page < 1 { 1 } else { pageable.page }
   let offset = (normalized_page - 1) * pageable.size
   let page_query = match query.to_query() {
-    @engine.Statement(stmt) =>
+    Statement(stmt) =>
       match stmt {
-        @engine.Select(sel) => {
+        Select(sel) => {
           let order_by = match pageable.sort {
             Some(s) =>
               sel.order_by +
               [
                 match s.direction {
-                  @engine.Asc => @engine.Asc(s.property)
-                  @engine.Desc => @engine.Desc(s.property)
+                  Asc => Asc(s.property)
+                  Desc => Desc(s.property)
                 },
               ]
             None => sel.order_by
           }
           @engine.Statement(
-            @engine.Select({
+            Select({
               ..sel,
               order_by,
               limit: Some(pageable.size),
@@ -1152,17 +1150,17 @@ pub impl @engine.Engine for MySQLEngine with page(
             }),
           )
         }
-        _ => @engine.Statement(stmt)
+        _ => Statement(stmt)
       }
-    @engine.Raw(sql, params) =>
-      @engine.Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
+    Raw(sql, params) =>
+      Raw(sql + " LIMIT \{pageable.size} OFFSET \{offset}", params)
     other => other
   }
   self.exec(page_query)
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with page_raw(
+pub impl @engine.Engine for MySQLEngine with fn page_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1172,7 +1170,7 @@ pub impl @engine.Engine for MySQLEngine with page_raw(
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with exec_raw(
+pub impl @engine.Engine for MySQLEngine with fn exec_raw(
   self,
   sql : String,
   params : FixedArray[@engine.Param],
@@ -1181,7 +1179,7 @@ pub impl @engine.Engine for MySQLEngine with exec_raw(
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with migrate_table(
+pub impl @engine.Engine for MySQLEngine with fn migrate_table(
   self,
   table_schema : @table.Table,
 ) -> @engine.QueryResult {
@@ -1215,7 +1213,7 @@ pub impl @engine.Engine for MySQLEngine with migrate_table(
 }
 
 ///|
-pub impl @engine.Engine for MySQLEngine with close(self) -> Unit {
+pub impl @engine.Engine for MySQLEngine with fn close(self) -> Unit {
   if self.tx_conn is Some(conn) {
     self.tx_conn = None
     close_mysql_tcp(conn)

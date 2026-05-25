@@ -51,7 +51,7 @@ pub fn build_tns_connect_packet(
     header_len
   }
 
-  let b = @buffer.new()
+  let b = Buffer()
   b.write_uint16_be(total_len.reinterpret_as_uint().to_uint16())
   b.write_uint16_be(0) // packet checksum (unused)
   b.write_byte(tns_packet_type_code(Connect).to_byte())

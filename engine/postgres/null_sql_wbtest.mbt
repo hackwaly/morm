@@ -3,7 +3,7 @@ fn select_stmt_with_null(
   where_ty : @engine.WhereType,
   value : @engine.Param,
 ) -> @engine.Statement {
-  @engine.Select({
+  Select({
     select: "*",
     from: "users",
     joins: [],
@@ -16,9 +16,7 @@ fn select_stmt_with_null(
 
 ///|
 test "pgsql null where renders is null/is not null" {
-  let (sql_eq, params_eq) = pg_render(
-    select_stmt_with_null(@engine.Eq, @engine.Null),
-  )
+  let (sql_eq, params_eq) = pg_render(select_stmt_with_null(Eq, Null))
   assert_eq(sql_eq, "SELECT * FROM users WHERE status IS NULL")
   assert_eq(params_eq.length(), 0)
   assert_eq(
@@ -27,7 +25,7 @@ test "pgsql null where renders is null/is not null" {
   )
 
   let (sql_ne, params_ne) = pg_render(
-    select_stmt_with_null(@engine.Ne, @engine.Json(Json::null())),
+    select_stmt_with_null(Ne, Json(Json::null())),
   )
   assert_eq(sql_ne, "SELECT * FROM users WHERE status IS NOT NULL")
   assert_eq(params_ne.length(), 0)

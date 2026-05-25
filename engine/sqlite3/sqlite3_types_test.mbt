@@ -59,7 +59,7 @@ test "sqlite value json and param conversion" {
 
   let parsed : SQLiteValue = try! @json.from_json(@json.parse("123"))
   match parsed {
-    SQLiteValue::Integer(i) => assert_eq(i, 123)
+    Integer(i) => assert_eq(i, 123)
     _ => panic()
   }
 

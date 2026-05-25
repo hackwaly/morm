@@ -6,7 +6,7 @@ pub(all) struct ConnectionPool[C] {
 }
 
 ///|
-pub fn[C] ConnectionPool::new(
+pub fn[C] ConnectionPool::ConnectionPool(
   max_open : Int,
   max_idle? : Int = max_open,
 ) -> ConnectionPool[C] {
@@ -19,8 +19,8 @@ pub fn[C] ConnectionPool::new(
     max_idle
   }
   {
-    idle: @async.Queue::new(kind=Blocking(idle_cap)),
-    permits: @async.Semaphore::new(max_open),
+    idle: Queue(kind=Blocking(idle_cap)),
+    permits: Semaphore(max_open),
     closed: false,
   }
 }
