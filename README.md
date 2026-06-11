@@ -40,22 +40,25 @@ Add the package to your application's `moon.mod.json`:
 
 ## Generate Code
 
-A typical package uses `pre-build` to generate `.g.mbt` files:
+A typical package defines a reusable `rule` and runs it with `dev_build` to
+generate `.g.mbt` files:
 
 ```moonbit
-options(
-  "pre-build": [
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "entities.mbt",
-      "output": "entities.g.mbt",
-    },
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "mapper.mbt",
-      "output": "mapper.g.mbt",
-    },
-  ],
+rule(
+  name: "mormgen",
+  command: "moon runwasm oboard/morm/mormgen -- $input -o $output && moonfmt -w $output",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "entities.mbt",
+  output: "entities.g.mbt",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "mapper.mbt",
+  output: "mapper.g.mbt",
 )
 ```
 

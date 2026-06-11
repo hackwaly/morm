@@ -1066,17 +1066,18 @@ fn is_source_mbt_file(name : String) -> Bool {
 ///|
 fn collect_package_entity_specs(
   input_file : String,
-) -> Array[EntitySpec] raise @fs.IOError {
+) -> Array[EntitySpec] raise @miniio.Errno {
   let dir = path_dirname(input_file)
   let merged : Array[EntitySpec] = []
   let seen : Map[String, Bool] = Map([])
-  for entry in @fs.read_dir(dir) {
+  for entry in @miniio.readdir(dir) {
     if !is_source_mbt_file(entry) {
       continue
     }
     let path = path_join(dir, entry)
-    guard @fs.is_file(path) else { continue }
-    let (file_ast, _) = @parser.parse_file(path)
+    guard @miniio.is_file(path) else { continue }
+    let source = @miniio.read_text_file(path)
+    let (file_ast, _) = @parser.parse_string(source, name=path)
     for spec in parse_entities_from_ast(file_ast) {
       if seen.contains(spec.name) {
         continue
@@ -1091,17 +1092,17 @@ fn collect_package_entity_specs(
 ///|
 fn collect_package_enum_specs(
   input_file : String,
-) -> Array[EnumSpec] raise @fs.IOError {
+) -> Array[EnumSpec] raise @miniio.Errno {
   let dir = path_dirname(input_file)
   let merged : Array[EnumSpec] = []
   let seen : Map[String, Bool] = Map([])
-  for entry in @fs.read_dir(dir) {
+  for entry in @miniio.readdir(dir) {
     if !is_source_mbt_file(entry) {
       continue
     }
     let path = path_join(dir, entry)
-    guard @fs.is_file(path) else { continue }
-    let source = @fs.read_file_to_string(path)
+    guard @miniio.is_file(path) else { continue }
+    let source = @miniio.read_text_file(path)
     for spec in parse_enum_specs_from_source(source) {
       if seen.contains(spec.name) {
         continue
@@ -1619,7 +1620,12 @@ fn generate_mapper_code(
 
 ///|
 fn main {
-  let argv = @sys.get_cli_args()
+  let argv = @miniio.args_get() catch {
+    e => {
+      println("IOError: \{e}")
+      return
+    }
+  }
   let cli_args = if argv.length() > 0 { argv[1:] } else { [] }
   let cmd = @argparse.Command(
     "mormgen",
@@ -1656,8 +1662,8 @@ fn main {
     }
   }
   try {
-    let (ast, _) = @parser.parse_file(input_file)
-    let source_content = @fs.read_file_to_string(input_file)
+    let source_content = @miniio.read_text_file(input_file)
+    let (ast, _) = @parser.parse_string(source_content, name=input_file)
     let specs = parse_entities_from_ast(ast)
     let all_entity_specs = collect_package_entity_specs(input_file)
     let package_enum_specs = collect_package_enum_specs(input_file)
@@ -1682,7 +1688,7 @@ fn main {
       codes.push(mcode)
     })
     let code = codes.join("\n\n")
-    @fs.write_string_to_file(output_file, code, encoding="utf8")
+    @miniio.write_text_file(output_file, code)
     let entity_names = specs.map(spec => spec.name)
     let mapper_names = mapper_specs.map(ms => ms.trait_name)
     if entity_names.length() > 0 {
@@ -1692,6 +1698,6 @@ fn main {
       println("Generated \{output_file} for mappers: \{to_repr(mapper_names)}")
     }
   } catch {
-    IOError(e) => println("IOError: \{e}")
+    e => println("IOError: \{e}")
   }
 }

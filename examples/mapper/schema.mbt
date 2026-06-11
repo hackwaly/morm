@@ -1,6 +1,6 @@
 ///|
 // mormgen source file: run from repo root:
-// moon run mormgen examples/mapper/schema.mbt -o examples/mapper/generated.mbt
+// moon runwasm oboard/morm/mormgen -- examples/mapper/schema.mbt -o examples/mapper/generated.mbt
 
 ///|
 #morm.entity

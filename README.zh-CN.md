@@ -17,22 +17,24 @@ MoonBit 生态下的轻量级 ORM。目标很直接：
   },
 ```
 
-2. 在你的 `moon.pkg` 添加
+2. 在你的 `moon.pkg` 添加代码生成规则
 
 ```moonbit nocheck
-options(
-  "pre-build": [
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "entities.mbt",
-      "output": "entities.g.mbt",
-    },
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "mapper.mbt",
-      "output": "mapper.g.mbt",
-    },
-  ],
+rule(
+  name: "mormgen",
+  command: "moon runwasm oboard/morm/mormgen -- $input -o $output && moonfmt -w $output",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "entities.mbt",
+  output: "entities.g.mbt",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "mapper.mbt",
+  output: "mapper.g.mbt",
 )
 ```
 
@@ -153,22 +155,22 @@ pub(all) struct Teacher {
 
 说明：目前生成器尚未读取编译器暴露的参数字典，长度/精度等参数采用保守默认与示例形式；未来会增强为真正读取参数值并完全可配置。
 
-## 代码生成：mormgen CLI
+## 代码生成：mormgen
 
-仓库包含一个生成器二进制 `mormgen`（见 `main/main.mbt`），负责把带 `#morm.*` 的源码翻译成实体和 mapper 实现。用法：
+`mormgen` 负责把带 `#morm.*` 的源码翻译成实体和 mapper 实现。作为依赖使用时，推荐通过发布的 wasm 生成器运行：
 
 ```bash
-moon run mormgen -- <input_file> -o <output_file>
+moon runwasm oboard/morm/mormgen -- <input_file> -o <output_file>
 ```
 
 典型流程（对应 `example/`）：
 
 ```bash
 # 生成实体的 table() 实现
-moon run mormgen -- example/entities.mbt -o example/entities.g.mbt
+moon runwasm oboard/morm/mormgen -- example/entities.mbt -o example/entities.g.mbt
 
 # 生成 mapper 实现
-moon run mormgen -- example/mapper.mbt -o example/mapper.g.mbt
+moon runwasm oboard/morm/mormgen -- example/mapper.mbt -o example/mapper.g.mbt
 ```
 
 `entities.g.mbt` 会包含每个实体的 `impl @morm.Entity` 和 `table()`，`mapper.g.mbt` 会包含 mapper struct、`Struct::new` 工厂函数以及基于 `#morm.query` 的方法实现。

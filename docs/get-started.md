@@ -35,26 +35,28 @@ Add `oboard/morm` to your app's `moon.mod.json`:
 }
 ```
 
-If you use generated code, configure your package build to run `morm-gen` before compilation.
+If you use generated code, configure your package build to run `mormgen` before compilation.
 
 ## Configure Code Generation
 
-In your package `moon.pkg`, add `pre-build` rules so source files generate their companion `.g.mbt` files:
+In your package `moon.pkg`, define one reusable `rule` and add a `dev_build` entry for each generated file:
 
 ```moonbit
-options(
-  "pre-build": [
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "entities.mbt",
-      "output": "entities.g.mbt",
-    },
-    {
-      "command": "$mod_dir/.mooncakes/oboard/morm/morm-gen $input -o $output && moonfmt -w $output",
-      "input": "mapper.mbt",
-      "output": "mapper.g.mbt",
-    },
-  ],
+rule(
+  name: "mormgen",
+  command: "moon runwasm oboard/morm/mormgen -- $input -o $output && moonfmt -w $output",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "entities.mbt",
+  output: "entities.g.mbt",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "mapper.mbt",
+  output: "mapper.g.mbt",
 )
 ```
 
@@ -211,14 +213,14 @@ These are the attributes you will use most often:
 
 ## Generate Code
 
-Inside this repository, the direct commands are:
+You can also run the published generator directly:
 
 ```bash
-moon run mormgen -- example/entities.mbt -o example/entities.g.mbt
-moon run mormgen -- example/mapper.mbt -o example/mapper.g.mbt
+moon runwasm oboard/morm/mormgen -- entities.mbt -o entities.g.mbt
+moon runwasm oboard/morm/mormgen -- mapper.mbt -o mapper.g.mbt
 ```
 
-Inside a consuming project, the `pre-build` hook usually handles this for you via the packaged `morm-gen` binary.
+Inside a package, the `dev_build` entries configured in `moon.pkg` usually handle this for you.
 
 The generated file contains the fully expanded `@morm.Table` literal for each entity.
 
@@ -455,7 +457,7 @@ For a typical project:
 
 1. define entities in `entities.mbt`
 2. define mapper traits in `mapper.mbt`
-3. generate `.g.mbt` files during pre-build
+3. generate `.g.mbt` files with `dev_build`
 4. implement or choose an engine
 5. call generated mappers for routine CRUD and use query builders for custom flows
 6. inspect generated code whenever behavior matters

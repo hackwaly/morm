@@ -484,17 +484,26 @@ This combines:
 
 ## CLI Examples
 
-Inside this repository:
+You can run the published generator directly:
 
 ```bash
-moon run mormgen -- example/entities.mbt -o example/entities.g.mbt
-moon run mormgen -- example/mapper.mbt -o example/mapper.g.mbt
+moon runwasm oboard/morm/mormgen -- entities.mbt -o entities.g.mbt
+moon runwasm oboard/morm/mormgen -- mapper.mbt -o mapper.g.mbt
 ```
 
-Inside a dependent project, the packaged binary is typically called by your `pre-build` hook:
+Inside a package, configure the same command with `rule` and `dev_build`:
 
-```bash
-$mod_dir/.mooncakes/oboard/morm/morm-gen entities.mbt -o entities.g.mbt
+```moonbit
+rule(
+  name: "mormgen",
+  command: "moon runwasm oboard/morm/mormgen -- $input -o $output && moonfmt -w $output",
+)
+
+dev_build(
+  rule: "mormgen",
+  input: "entities.mbt",
+  output: "entities.g.mbt",
+)
 ```
 
 ## Final Note

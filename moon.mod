@@ -6,6 +6,7 @@ import {
   "moonbitlang/x@0.4.43",
   "moonbitlang/parser@0.3.3",
   "moonbitlang/async@0.19.1",
+  "moonbit-community/miniio@0.2.0",
 }
 
 readme = "README.mbt.md"

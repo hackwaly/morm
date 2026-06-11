@@ -4,5 +4,6 @@ target
 _build/
 .mooncakes/
 .moonagent/
+.repos
 
 node_modules/
