@@ -25,10 +25,10 @@ test "from_string" {
   inspect(@time.Period::from_string("P10Y2M3D"), content="P10Y2M3D")
   inspect(@time.Period::from_string("P-10Y-2M-3D"), content="P-10Y-2M-3D")
   inspect(@time.Period::from_string("P2M3D10Y"), content="P2M3D")
-  assert_true((try? @time.Period::from_string("10Y")) is Err(_))
-  assert_true((try? @time.Period::from_string("10Y0M")) is Err(_))
-  assert_true((try? @time.Period::from_string("P10YT3H")) is Err(_))
-  assert_true((try? @time.Period::from_string("P2.5Y")) is Err(_))
+  @test.assert_raise(() => @time.Period::from_string("10Y"))
+  @test.assert_raise(() => @time.Period::from_string("10Y0M"))
+  @test.assert_raise(() => @time.Period::from_string("P10YT3H"))
+  @test.assert_raise(() => @time.Period::from_string("P2.5Y"))
 }
 
 ///|
@@ -127,8 +127,8 @@ test "op_add" {
   inspect(p1.op_add(p2), content="P0D")
   inspect(p1.op_add(p1), content="P2Y4M6D")
   inspect(p2.op_add(p2), content="P-2Y-4M-6D")
-  assert_true((try? p1.op_add(p3)) is Err(_))
-  assert_true((try? p2.op_add(p4)) is Err(_))
+  @test.assert_raise(() => p1.op_add(p3))
+  @test.assert_raise(() => p2.op_add(p4))
 }
 
 ///|
@@ -148,8 +148,8 @@ test "op_sub" {
   inspect(p1.op_sub(p1), content="P0D")
   inspect(p1.op_sub(p2), content="P2Y4M6D")
   inspect(p2.op_sub(p1), content="P-2Y-4M-6D")
-  assert_true((try? p3.op_sub(p2)) is Err(_))
-  assert_true((try? p4.op_sub(p1)) is Err(_))
+  @test.assert_raise(() => p3.op_sub(p2))
+  @test.assert_raise(() => p4.op_sub(p1))
 }
 
 ///|
@@ -159,8 +159,8 @@ test "multiply" {
   inspect(p.multiply(1), content="P1Y2M3D")
   inspect(p.multiply(-1), content="P-1Y-2M-3D")
   inspect(p.multiply(2), content="P2Y4M6D")
-  assert_true((try? p.multiply(@int.MAX_VALUE)) is Err(_))
-  assert_true((try? p.multiply(@int.MIN_VALUE)) is Err(_))
+  @test.assert_raise(() => p.multiply(@int.MAX_VALUE))
+  @test.assert_raise(() => p.multiply(@int.MIN_VALUE))
 }
 
 ///|
@@ -180,5 +180,5 @@ test "negated" {
     months=@int.MIN_VALUE,
     days=@int.MIN_VALUE,
   )
-  assert_true((try? p.negated()) is Err(_))
+  @test.assert_raise(() => p.negated())
 }

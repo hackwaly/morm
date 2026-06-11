@@ -2,11 +2,11 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/socket",
   "moonbitlang/core/buffer",
-  "moonbitlang/core/encoding/utf8" @utf8,
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/core/strconv",
-  "moonbitlang/x/crypto" @crypto,
+  "moonbitlang/x/crypto",
   "oboard/morm/engine",
   "oboard/morm/table",
 }

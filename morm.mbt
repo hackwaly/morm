@@ -678,10 +678,10 @@ fn page_total_elements(row : Map[String, @engine.Param], fallback : Int) -> Int 
 fn[T : @engine.FromParam] decode_page_row(
   row : Map[String, @engine.Param],
 ) -> T {
-  if (try? (@engine.from_param(row_param(row)) : T)) is Ok(value) {
-    value
-  } else {
-    try! @engine.from_param(page_row_param(row))
+  try @engine.from_param(row_param(row)) catch {
+    _ => try! @engine.from_param(page_row_param(row))
+  } noraise {
+    value => value
   }
 }
 
@@ -699,8 +699,10 @@ pub async fn[E : @engine.Engine, O : ToJson, T : @engine.FromParam] preload_belo
     let key = key_param.to_json().stringify()
     let rows = select_by_eq(engine, target_table, target_key, key_param)
     if rows is [row, ..] {
-      if (try? (@engine.from_param(row_param(row)) : T)) is Ok(entity) {
-        out.set(key, entity)
+      try @engine.from_param(row_param(row)) catch {
+        _ => ()
+      } noraise {
+        entity => out.set(key, entity)
       }
     }
   }
@@ -721,8 +723,10 @@ pub async fn[E : @engine.Engine, O : ToJson, T : @engine.FromParam] preload_has_
     let key = key_param.to_json().stringify()
     let rows = select_by_eq(engine, target_table, target_key, key_param)
     if rows is [row, ..] {
-      if (try? (@engine.from_param(row_param(row)) : T)) is Ok(entity) {
-        out.set(key, entity)
+      try @engine.from_param(row_param(row)) catch {
+        _ => ()
+      } noraise {
+        entity => out.set(key, entity)
       }
     }
   }
@@ -744,8 +748,10 @@ pub async fn[E : @engine.Engine, O : ToJson, T : @engine.FromParam] preload_has_
     let rows = select_by_eq(engine, target_table, target_key, key_param)
     let items : Array[T] = []
     for row in rows {
-      if (try? (@engine.from_param(row_param(row)) : T)) is Ok(entity) {
-        items.push(entity)
+      try @engine.from_param(row_param(row)) catch {
+        _ => ()
+      } noraise {
+        entity => items.push(entity)
       }
     }
     out.set(key, items)
@@ -778,9 +784,10 @@ pub async fn[E : @engine.Engine, O : ToJson, T : @engine.FromParam] preload_many
           engine, target_table, target_key, target_value,
         )
         for target_row in target_rows {
-          if (try? (@engine.from_param(row_param(target_row)) : T))
-            is Ok(entity) {
-            items.push(entity)
+          try @engine.from_param(row_param(target_row)) catch {
+            _ => ()
+          } noraise {
+            entity => items.push(entity)
           }
         }
       }

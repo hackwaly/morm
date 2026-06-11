@@ -10,7 +10,7 @@ pub(all) enum PostStatus {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Show for PostStatus with output(self : PostStatus, logger : &Logger) {
+pub impl Show for PostStatus with fn output(self : PostStatus, logger : &Logger) {
   let text = match self {
     Draft => "Draft"
     Published => "Published"

@@ -1,6 +1,6 @@
 ///|
 trait Column {
-  column(Statement, Int) -> Self
+  fn column(Statement, Int) -> Self
 }
 
 ///|
@@ -41,26 +41,26 @@ extern "c" fn sqlite3_column_name_bytes(
 ) -> Bytes = "moonbit_sqlite3_column_name"
 
 ///|
-pub impl Column for Int with column(stmt, index) {
+pub impl Column for Int with fn column(stmt, index) {
   sqlite3_column_int(stmt, index)
 }
 
 ///|
-pub impl Column for Int64 with column(stmt, index) {
+pub impl Column for Int64 with fn column(stmt, index) {
   sqlite3_column_int64(stmt, index)
 }
 
 ///|
-pub impl Column for Double with column(stmt, index) {
+pub impl Column for Double with fn column(stmt, index) {
   sqlite3_column_double(stmt, index)
 }
 
 ///|
-pub impl Column for Bytes with column(stmt, index) {
+pub impl Column for Bytes with fn column(stmt, index) {
   sqlite3_column_bytes(stmt, index)
 }
 
 ///|
-pub impl Column for String with column(stmt, index) {
+pub impl Column for String with fn column(stmt, index) {
   sqlite3_column_text(stmt, index)
 }

@@ -10,7 +10,7 @@ pub(all) struct SelectStatement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for SelectStatement with output(
+pub impl Show for SelectStatement with fn output(
   self : SelectStatement,
   logger : &Logger,
 ) {
@@ -26,7 +26,7 @@ pub(all) struct InsertStatement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for InsertStatement with output(
+pub impl Show for InsertStatement with fn output(
   self : InsertStatement,
   logger : &Logger,
 ) {
@@ -42,7 +42,7 @@ pub(all) struct UpsertStatement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for UpsertStatement with output(
+pub impl Show for UpsertStatement with fn output(
   self : UpsertStatement,
   logger : &Logger,
 ) {
@@ -57,7 +57,7 @@ pub(all) struct UpdateStatement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for UpdateStatement with output(
+pub impl Show for UpdateStatement with fn output(
   self : UpdateStatement,
   logger : &Logger,
 ) {
@@ -71,7 +71,7 @@ pub(all) struct DeleteStatement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for DeleteStatement with output(
+pub impl Show for DeleteStatement with fn output(
   self : DeleteStatement,
   logger : &Logger,
 ) {
@@ -88,7 +88,7 @@ pub(all) enum Statement {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Statement with output(self : Statement, logger : &Logger) {
+pub impl Show for Statement with fn output(self : Statement, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -102,7 +102,7 @@ pub(all) enum TxOp {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for TxOp with output(self : TxOp, logger : &Logger) {
+pub impl Show for TxOp with fn output(self : TxOp, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -114,11 +114,11 @@ pub(all) enum Query {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Show for Query with output(self : Query, logger : &Logger) {
+pub impl Show for Query with fn output(self : Query, logger : &Logger) {
   write_json_show(self, logger)
 }
 
 ///|
-pub impl QueryBuilder for Query with to_query(self) -> Query {
+pub impl QueryBuilder for Query with fn to_query(self) -> Query {
   self
 }
