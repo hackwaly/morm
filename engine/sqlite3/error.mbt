@@ -4,7 +4,7 @@ pub suberror SqliteError {
 }
 
 ///|
-pub impl Debug for SqliteError with to_repr(self) {
+pub impl Debug for SqliteError with fn to_repr(self) {
   match self {
     SqliteError((code, _)) =>
       Repr::ctor("SqliteError", [(None, Repr::integer(code.to_string()))])

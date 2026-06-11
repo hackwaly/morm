@@ -35,7 +35,7 @@ pub(all) enum ColumnType {
 } derive(ToJson, FromJson, Eq, Compare, Hash)
 
 ///|
-pub impl Show for ColumnType with output(self : ColumnType, logger : &Logger) {
+pub impl Show for ColumnType with fn output(self : ColumnType, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -56,7 +56,7 @@ pub(all) struct Column {
 } derive(ToJson, Eq)
 
 ///|
-pub impl Show for Column with output(self : Column, logger : &Logger) {
+pub impl Show for Column with fn output(self : Column, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -70,7 +70,7 @@ pub(all) enum IndexType {
 } derive(ToJson, FromJson, Eq, Compare, Hash)
 
 ///|
-pub impl Show for IndexType with output(self : IndexType, logger : &Logger) {
+pub impl Show for IndexType with fn output(self : IndexType, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -83,7 +83,7 @@ pub(all) struct Index {
 } derive(ToJson, FromJson, Eq, Compare, Hash)
 
 ///|
-pub impl Show for Index with output(self : Index, logger : &Logger) {
+pub impl Show for Index with fn output(self : Index, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -98,7 +98,7 @@ pub(all) struct ForeignKey {
 } derive(ToJson, FromJson, Eq, Compare, Hash)
 
 ///|
-pub impl Show for ForeignKey with output(self : ForeignKey, logger : &Logger) {
+pub impl Show for ForeignKey with fn output(self : ForeignKey, logger : &Logger) {
   write_json_show(self, logger)
 }
 
@@ -122,6 +122,6 @@ pub(all) struct Table {
 } derive(ToJson, Eq)
 
 ///|
-pub impl Show for Table with output(self : Table, logger : &Logger) {
+pub impl Show for Table with fn output(self : Table, logger : &Logger) {
   write_json_show(self, logger)
 }

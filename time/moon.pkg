@@ -4,4 +4,5 @@ import {
   "moonbitlang/core/strconv",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
+  "moonbitlang/core/test",
 }
